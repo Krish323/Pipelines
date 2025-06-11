@@ -1,0 +1,49 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "appName": {
+      "value": "navigator"
+    },
+    "environment": {
+      "value": "prod"
+    },
+    "locationCode": {
+      "value": "use2"
+    },
+    "dbActiveDirectoryAdminSid": {
+      "value": "01442563-518b-475d-9abd-ffa6c95f57aa"
+    },
+    "dbActiveDirectoryAdminLogin": {
+      "value": "SG-US Cloud DevOps Audit Prod"
+    },
+    "dbActiveDirectoryAdminTenantId": {
+      "value": "36da45f1-dd2c-4d1f-af13-5abe46b99921"
+    },
+    "dbAdminLoginName": {
+      "value": "Runtime"
+    },
+    "dbAdminLoginPwd": {
+      "value": "Runtime"
+    },
+    "dbBackupRetentionDays": {
+      "value": 30
+    },
+    "dbPartnerEnvironment": {
+      "value": "bcp"
+    },
+    "dbPartnerLocationCode": {
+      "value": "usc"
+    },
+    "vnetFirewallRules": {
+      "value": [
+        "/subscriptions/8c71ef53-4473-4862-af36-bae6e40451b2/resourceGroups/AUDIT_PROD_RG_Network/providers/Microsoft.Network/virtualNetworks/azeus2prdvnt01/subnets/AUDIT_PROD_OMNIA_General_Subnet",
+        "/subscriptions/8c71ef53-4473-4862-af36-bae6e40451b2/resourceGroups/AZRG-USE2-AUD-NAVIGATOR-PROD/providers/Microsoft.Network/virtualNetworks/pnavigatorvntuse2/subnets/sbnappserviceuse2",
+        "/subscriptions/8c71ef53-4473-4862-af36-bae6e40451b2/resourceGroups/AZRG_OMNIABUILD_PROD_AME_USE2_AKS/providers/Microsoft.Network/virtualNetworks/prdomniaaksvnetuse2/subnets/nodes-subnet"
+      ]
+    },
+    "dbThreatDetectionAlertEmails": {
+      "value": ["usauditdevopsame@deloitte.com", "aapssecops@deloitte.com"]
+    }
+  }
+}

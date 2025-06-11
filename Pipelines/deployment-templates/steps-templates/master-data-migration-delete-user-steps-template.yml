@@ -1,0 +1,28 @@
+parameters:
+  azureSubscription: ""
+  infrastructureRepo: ""
+
+steps:
+  - checkout: ${{ parameters.infrastructureRepo }}
+    clean: true
+    path: Infrastructure
+
+  - task: AzurePowerShell@5
+    displayName: 'Get DB Admin Password'
+    inputs:
+      azureSubscription: '${{ parameters.azureSubscription }}'
+      ScriptType: FilePath
+      ScriptPath: '$(Pipeline.Workspace)/Infrastructure/PipelineScripts/Set-SecretAsPipelineVariable.ps1'
+      ScriptArguments: '-KeyVaultName ''$(deployKeyVaultName)'' -SecretName ''$(dbAdminPasswordSecretName)'' -VariableName ''dbAdminPassword'''
+      azurePowerShellVersion: LatestVersion
+
+  - task: SqlAzureDacpacDeployment@1
+    displayName: Delete Migration User - $(geo) $(environment)'
+    inputs:
+      azureSubscription: ${{ parameters.azureSubscription }}
+      DatabaseName: Navigator_Master
+      deployType: InlineSqlTask
+      ServerName: $(sqlServerNameMaster).database.windows.net
+      SqlPassword: '$(dbAdminPassword)'
+      SqlUsername: '$(dbAdminLoginName)'
+      SqlInline: DROP USER [migration_account]

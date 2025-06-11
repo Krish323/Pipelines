@@ -1,0 +1,9 @@
+variables:
+  toscaExecutionPath: distributed
+  toscaPathToCIClient: C:\Program Files (x86)\TRICENTIS\Tosca Testsuite\ToscaCommander\ToscaCI\Client\ToscaCIClient.exe
+  toscaPathToResultsXml: C:\Results\Audit Assurance\Navigator\
+  toscaPathToSmokeTestXml: C:\ExecutionList\Audit Assurance\Navigator\Navigator_Smoke_Test.xml
+  toscaPathToRegressionTestXml: C:\ExecutionList\Audit Assurance\Navigator\Navigator_Regression_Test.xml
+  toscaPathToSmokeTestBatchFile: C:\ExecutionList\Audit Assurance\Navigator\Email\NavigatorSmoke.bat
+  toscaPathToRegressionTestBatchFile: C:\ExecutionList\Audit Assurance\Navigator\Email\NavigatorRegression.bat
+  toscaEmailScriptPath: C:\ExecutionList\Audit Assurance\Navigator\Email\EmailScript.ps1 

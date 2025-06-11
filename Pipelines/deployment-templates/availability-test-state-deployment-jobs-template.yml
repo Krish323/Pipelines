@@ -1,0 +1,66 @@
+parameters:
+  - name: pool
+    displayName: Pool Name
+    type: string
+  - name: azureSubscription
+    displayName: Azure Subscription
+    type: string
+  - name: geo
+    displayName: Geo
+    type: string
+  - name: lifecycle
+    displayName: LifeCycle
+    type: string
+  - name: environment
+    displayName: Environment
+    type: string
+  - name: isPrimaryGeo
+    type: boolean
+    default: false
+  - name: enableAvailabilityTests
+    default: false
+    displayName: Enable Availability Tests
+    type: boolean
+  - name: environmentsToProcess
+    displayName: Environments to process
+    type: string
+    values:
+      - Both
+      - Primary
+      - Secondary
+
+jobs:
+  - job: AvailabilityTestEnablement
+    pool: ${{ parameters.pool }}
+    variables:
+      - template: ../variables-templates/${{ parameters.environment }}-variables-template.yml
+      - template: ../variables-templates/${{ parameters.lifecycle }}-${{ parameters.geo}}-variables-template.yml
+      - template: ../variables-templates/${{ parameters.geo}}-variables-template.yml
+      - template: ../variables-templates/release-variables-template.yml
+        parameters:
+            environment: ${{ parameters.environment }}
+            isPrimaryGeo: ${{ parameters.isPrimaryGeo }}
+      - template: ../variables-templates/failover-variables-template.yml
+    steps:
+      - checkout: none
+      - download: current
+
+      - template: steps-templates/pipeline-generate-variables-steps-template.yml
+
+      - task: AzurePowerShell@5
+        displayName: 'Set Availability Test State - $(primaryResourceGroupName)'
+        condition: and(succeeded(), in('${{ parameters.environmentsToProcess }}', 'Both', 'Primary'))
+        inputs:
+          azureSubscription: '${{ parameters.azureSubscription }}'
+          ScriptPath: '$(Pipeline.Workspace)/Infrastructure/Scripts/Set-AvailabilityTestState.ps1'
+          ScriptArguments: -ResourceGroupName '$(primaryResourceGroupName)' -EnableAvailabilityTests $${{ parameters.enableAvailabilityTests }}
+          azurePowerShellVersion: LatestVersion
+
+      - task: AzurePowerShell@5
+        displayName: 'Set Availability Test State - $(secondaryResourceGroupName)'
+        condition: and(succeeded(), in('${{ parameters.environmentsToProcess }}', 'Both', 'Secondary'))
+        inputs:
+          azureSubscription: '${{ parameters.azureSubscription }}'
+          ScriptPath: '$(Pipeline.Workspace)/Infrastructure/Scripts/Set-AvailabilityTestState.ps1'
+          ScriptArguments: -ResourceGroupName '$(secondaryResourceGroupName)' -EnableAvailabilityTests $${{ parameters.enableAvailabilityTests }}
+          azurePowerShellVersion: LatestVersion

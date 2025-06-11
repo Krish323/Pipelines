@@ -1,0 +1,24 @@
+parameters:
+  pool: ASSURANCE-USE2-NPD-AKS-WIN-RELEASE
+  azureSubscription: AzureRM_US_AUDIT_PREPROD
+  geo: ""
+  environment: ""
+  lifecycle: ""
+  repositoryName: ""
+
+jobs:
+  - job: InfrastructureBuild
+    pool: "${{ parameters.pool }}"
+    variables:
+      - template: ../variables-templates/${{ parameters.environment }}-variables-template.yml
+      - template: ../variables-templates/${{ parameters.lifecycle }}-${{ parameters.geo }}-variables-template.yml
+      - template: ../variables-templates/${{ parameters.geo }}-variables-template.yml
+      - template: ../variables-templates/release-variables-template.yml
+        parameters:
+          environment: ${{ parameters.environment }}
+          isPrimaryGeo: false
+    steps:
+      - template: steps-templates/db-access-review-build-steps-template.yml
+        parameters:
+          azureSubscription: '${{ parameters.azureSubscription }}'
+          repositoryName: '${{ parameters.repositoryName }}'

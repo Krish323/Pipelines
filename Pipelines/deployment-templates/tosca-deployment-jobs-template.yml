@@ -1,0 +1,18 @@
+parameters:
+  toscaPathToXml: ""
+  toscaPathToBatchFile: ""
+  stageName: ""
+
+jobs:
+  - job: ${{ parameters.stageName }}
+    pool: ASSURANCE-USE2-NPD-VM-WIN-TOSCA
+    timeoutInMinutes: 600
+    variables:
+      - group: ase-less-infrastructure-npd-v2 
+      - template: ../variables-templates/tosca-variables-template.yml
+    steps:  
+      - template: ../deployment-templates/steps-templates/tosca-deployment-steps-template.yml
+        parameters:
+          toscaPathToXml: ${{ parameters.toscaPathToXml }}
+          toscaPathToBatchFile: ${{ parameters.toscaPathToBatchFile }}
+          stageName: ${{ parameters.stageName}} 

@@ -1,0 +1,113 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "appName": {
+            "value": "navigator"
+        },
+        "environment": {
+            "value": "dev"
+        },
+        "locationCode": {
+            "value": "use2"
+        },
+        "spnName": {
+            "value": "US Audit Preprod SPN"
+        },
+        "spnObjectId": {
+            "value": "a445eb80-8fbe-49e3-81da-1f05a50763f1"
+        },
+        "vnetFirewallRules": {
+            "value": [
+                {
+                    "resourceGroupName": "AUDIT_PREPROD_RG_Network",
+                    "vnetName": "AZ-EUS2-AUD-NPD-GlobalAudit",
+                    "subnetName": "AUDIT_PREPROD_OMNIA_APP_SUBNET"
+                },
+                {
+                    "resourceGroupName": "AZRG_OMNIABUILD_PREPROD_AME_USE2_AKS",
+                    "vnetName": "npdomniaaksvnetuse2",
+                    "subnetName": "nodes-subnet"
+                }
+            ]
+        },
+        "kvAccessPolicies": {
+            "value": [
+                {
+                    "objectId": "9b08add9-21b1-4051-9536-d8a5d8564d8e",
+                    "comments": "Application Security Group",
+                    "secretsPermissions": [
+                        "get", 
+                        "list"
+                    ],
+                    "keysPermissions": [
+                    ],
+                    "certificatesPermissions": [
+                    ]                                        
+                },
+                {
+                    "objectId": "3e2ab639-b911-4cab-8c2b-7792fbaea44d",
+                    "comments": "Microsoft Azure App Service",
+                    "secretsPermissions": [
+                        "all"
+                    ],
+                    "keysPermissions": [
+                    ],
+                    "certificatesPermissions": [
+                    ]  
+                },
+                {
+                    "objectId": "fb0990ac-e4f7-4366-8c6d-1eadcbfc9ca9",
+                    "comments": "Access Policies for SG-US EMA Cloud SubOps Audit Preprod",
+                    "secretsPermissions": [
+                        "all"
+                    ],
+                    "keysPermissions": [
+                    ],
+                    "certificatesPermissions": [
+                    ]  
+                },
+                {
+                    "objectId": "4e2220db-bc46-44e9-b9d1-483a29cbb17c",
+                    "comments": "Access Policies for SG-US SG-US Cloud SubMgr Audit Preprod",
+                    "secretsPermissions": [
+                        "all"
+                    ],
+                    "keysPermissions": [
+                    ],
+                    "certificatesPermissions": [
+                    ]  
+                },
+                {
+                    "objectId": "afeff4b2-ee65-479a-942e-879c1d2d8a1f",
+                    "comments": "Access Policies for SG-US-Assurance Navigator NPD Developer Standard",
+                    "secretsPermissions": [
+                        "get",
+                        "list"
+                    ],
+                    "keysPermissions": [],
+                    "certificatesPermissions": []
+                },
+                {
+                    "objectId": "f8b6e8f4-74a9-44b3-a2c5-b1c4244eaf71",
+                    "comments": "Access Policies for SG-US Assurance IPO NonProd Elevated",
+                    "secretsPermissions": [
+                        "get",
+                        "list"
+                    ],
+                    "keysPermissions": [],
+                    "certificatesPermissions": []
+                },
+                {
+                    "objectId": "e41c0c13-a11e-4f18-aaa9-e25144cd964e",
+                    "comments": "Access Policies for SG-US-Assurance Navigator NPD Team Lead Standard",
+                    "secretsPermissions": [
+                        "all"
+                    ],
+                    "keysPermissions": [],
+                    "certificatesPermissions": []
+                }
+            ]
+        }
+    }
+}

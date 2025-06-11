@@ -1,0 +1,29 @@
+parameters:
+  pool: null
+  azureSubscription: ""
+  geo: ""
+  lifecycle: ""
+  environment: ""
+  environmentIndex: ""
+
+jobs:
+  - job: InfrastructureDeployment
+    pool: ${{ parameters.pool }}
+    variables:
+      - template: ../variables-templates/${{ parameters.environment }}-variables-template.yml
+        parameters:
+          environmentIndex: ${{ parameters.environmentIndex }}
+      - template: ../variables-templates/${{ parameters.lifecycle }}-${{ parameters.geo}}-variables-template.yml
+      - template: ../variables-templates/${{ parameters.geo}}-variables-template.yml
+      - template: ../variables-templates/release-variables-template.yml
+        parameters:
+          environment: ${{ parameters.environment }}
+    steps:
+      - checkout: none
+      - download: current
+
+      - template: steps-templates/pipeline-generate-variables-steps-template.yml
+
+      - template: steps-templates/dim-environment-steps-template.yml
+        parameters:
+          azureSubscription: '${{ parameters.azureSubscription }}'

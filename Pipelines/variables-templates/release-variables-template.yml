@@ -1,0 +1,79 @@
+parameters:
+  - name: isPrimaryGeo
+    type: boolean
+    default: false
+  - name: environment
+    type: string
+    default: ""
+
+variables:
+  appBlobNames: navigator-file-scan
+  environmentFullName: $(environment)$(environmentIndex)
+  applicationDatabaseRoles: "db_datareader,db_datawriter"
+  applicationDBUserName: Navigator_User
+  applicationKeyVaultName: $(environmentAlias)$(AppName)kv$(LocationCode)
+  applicationMsiName: $(primaryEnvironmentAlias)$(appName)msi$(primaryLocationCode)
+  applicationNonProdGroupNames: '@("SG-US Assurance IPO Contribute Non-Prod Elevated","SG-US-Assurance Navigator NPD Developer Standard","SG-US-Assurance Navigator NPD Team Lead Standard")'
+  appName: navigator
+  appServiceNameApi: $(environmentAlias)$(AppName)appsvcapi$(LocationCode)
+  appServiceNameWeb: $(environmentAlias)$(AppName)appsvcui$(LocationCode)
+  appStorageAccountName: $(environmentAlias)$(AppName)stoapp$(LocationCode)
+  appInsightsName: $(environmentAlias)$(AppName)insight$(LocationCode)
+  appSubnetName: sbnappservice$(locationCode)
+  functionAppName: $(environmentAlias)$(appName)fnqna$(locationCode)
+  containerNamePrefix: Case
+  dbAdminLoginName: NavigatorDBAdmin
+  dBAdminPasswordSecretName: $(AppName)DBAdminPassword-$(environmentFullName)
+  dimProtectedResourceTypeList: "Microsoft.Sql/servers,Microsoft.Sql/instancePools,Microsoft.Network/trafficmanagerprofiles,Microsoft.Storage/storageAccounts,Microsoft.ManagedIdentity/userAssignedIdentities"
+  environmentConfigFile: $(geo).$(environment).settings.json
+  fnStorageAccountName: $(environmentAlias)$(AppName)stofn$(LocationCode)
+  globalTrafficManagerName: $(primaryEnvironmentAlias)$(AppName)tmglobal$(primaryLocationCode)
+  geoTrafficManagerName: $(primaryEnvironmentAlias)$(AppName)tmgeo$(primaryLocationCode)
+  ${{ if notIn(parameters.environment, 'bcp', 'test') }}:
+    primaryGeoLocationCode: euw
+  ${{ if in(parameters.environment, 'bcp', 'test') }}:
+    primaryGeoLocationCode: eun
+  primaryResourceGroupName: "azrg-$(primaryLocationCode)-aud-$(AppName)-$(primaryEnvironmentName)"
+  qnaHostName: $(functionAppName).azurewebsites.net
+  replicaDatabaseNames: Navigator_Master
+  replicaDatabaseRoles: db_datareader
+  replicaMsiNames: $(primaryEnvironmentAlias)$(appName)msiuse2,$(primaryEnvironmentAlias)$(appName)msijpe
+  signalRServiceName: $(environmentAlias)$(appName)signalr$(locationCode)
+  sqlServerName: $(environmentAlias)$(AppName)sql$(LocationCode)
+  protectedResourceTypeList: "Microsoft.Network/trafficmanagerprofiles,Microsoft.ManagedIdentity/userAssignedIdentities"
+  ${{ if eq(parameters.isPrimaryGeo, true) }}:
+    sqlServerNameMaster: $(environmentAlias)$(AppName)sql$(LocationCode)
+  ${{ if eq(parameters.isPrimaryGeo, false) }}:
+    sqlServerNameMaster: $(environmentAlias)$(AppName)sql$(primaryGeoLocationCode)-replica-$(LocationCode)
+  privateLinkSubnetName: sbnprivatelink$(locationCode)
+  targetConfigPattern: "appsettings.json"
+  primaryEndpoint: primarylocation
+  validSecretList: "AzureADClientSecretKey,DeveloperAccountPassword,QnAFnCode"
+  vnetName: $(environmentAlias)$(appName)vnt$(locationCode)
+  smtpHost: "172.16.1.4"
+  icapHost: "172.16.1.5"
+  signalrInternalPrivateEndpointName: $(environmentAlias)$(appName)pesignalrinternal$(locationCode)
+  signalrInternalPrivateDnsZoneId: "/subscriptions/6efefd6c-debf-4054-bf28-ff5de93bb0ed/resourceGroups/azrg-eus2-its-privatelink-dns-zones-prd/providers/Microsoft.Network/privateDnsZones/privatelink.service.signalr.net"
+
+  ${{ if notIn(parameters.environment, 'stage', 'val', 'prod', 'bcp', 'int', 'test') }}:
+    appRegClientId: "be691cd7-f7ff-4025-a2d7-70c287df8957"
+
+  ${{ if in(parameters.environment, 'stage', 'val') }}:
+    appRegClientId: "685fb48e-68b0-4c87-8361-02c951ed307c"
+
+  ${{ if in(parameters.environment, 'prod', 'bcp', 'int', 'test') }}:
+    appRegClientId: "1272813b-7764-41f6-bdd1-a3f829128f96"
+    uiHostName: $(appName).deloitte.com
+    ipoHostName: iposelfassess.deloitte.com
+    apiHostNameAme: $(appName)apiame.deloitte.com
+    apiHostNameApa: $(appName)apiapa.deloitte.com
+    apiHostNameEma: $(appName)apiema.deloitte.com
+    selfAssessHostName: selfassess.deloitte.com
+
+  ${{ if not(in(parameters.environment, 'prod', 'bcp', 'int', 'test')) }}:
+    uiHostName: $(environmentAlias)$(appName).aaps.deloitte.com
+    ipoHostName: $(environmentAlias)iposelfassess.aaps.deloitte.com
+    apiHostNameAme: $(environmentAlias)$(appName)apiame.aaps.deloitte.com
+    apiHostNameApa: $(environmentAlias)$(appName)apiapa.aaps.deloitte.com
+    apiHostNameEma: $(environmentAlias)$(appName)apiema.aaps.deloitte.com
+    selfAssessHostName: $(environmentAlias)selfassess.aaps.deloitte.com

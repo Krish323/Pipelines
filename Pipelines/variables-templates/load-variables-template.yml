@@ -1,0 +1,24 @@
+parameters:
+  - name: environmentIndex
+    type: string
+    default: ""
+  - name: geo
+    type: string
+    default: ""
+
+variables:
+  developerDatabaseRoles: db_datareader
+  deploySecondaryGeos: true
+  environment: load
+  environmentIndex: ${{ parameters.environmentIndex }}
+  environmentAlias: l$(environmentIndex)
+  primaryEnvironmentAlias: $(environmentAlias)
+  primaryEnvironmentName: $(environment)$(environmentIndex)
+  functionAppNames: "QnA"
+
+  ${{ if in(parameters.geo, 'ame') }}:
+    deloitteInternalSubnetId: '/subscriptions/d7ac9c0b-155b-42a8-9d7d-87e883f82d5d/resourceGroups/AUDIT_PREPROD_RG_Network/providers/Microsoft.Network/virtualNetworks/azuseprdvnt01/subnets/AUDIT_PREPROD_GENERAL_PE_Subnet'
+  ${{ if in(parameters.geo, 'apa') }}:
+    deloitteInternalSubnetId: '/subscriptions/579d5d7f-d0b3-4cc6-9c61-6715b876a8fe/resourceGroups/AZRG-JPE-AUD-ITS-NPD/providers/Microsoft.Network/virtualNetworks/AZAPAJPEAUDNPDVNT01/subnets/AUDIT_PREPROD_PRIVATE_ENDPOINT_Subnet'
+  ${{ if in(parameters.geo, 'ema') }}:
+    deloitteInternalSubnetId: '/subscriptions/429c67ab-6761-4617-a512-a4743395cede/resourceGroups/AZRG-EUW-AUD-ITS-NPD/providers/Microsoft.Network/virtualNetworks/azeuwnpdvnt01/subnets/AUDIT_PREPROD_PRIVATE_ENDPOINT_Subnet'

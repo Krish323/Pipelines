@@ -1,0 +1,81 @@
+trigger: none
+
+name: $(Date:yyyyMMdd)$(Rev:.r)
+
+resources:
+  repositories:
+    - repository: CER_App
+      type: git
+      name: CER_App
+      ref: refs/heads/develop
+
+stages:
+  - stage: FORTIFY_SCAN_UI
+    jobs:
+      - job: GetFortifyCredentials
+        pool: ASSURANCE-USE2-NPD-AKS-WIN-RELEASE
+        variables:
+          - template: variables-templates/npd-ame-variables-template.yml
+          - template: variables-templates/release-variables-template.yml
+        steps:
+          - checkout: self
+
+          - template: build-templates\steps-templates\get-fortify-secrets-steps-template.yml
+            parameters:
+              azureSubscription: AzureRM_US_AUDIT_PREPROD
+
+      - job: FortifyScanUI
+        dependsOn: GetFortifyCredentials
+        pool: Levvia Preprod Build
+        variables:
+          - template: variables-templates/fortify-variables-template.yml
+          - name: ScanCentralClientAuthToken
+            value: $[ dependencies.GetFortifyCredentials.outputs['fortifyAuthToken.ScanCentralClientAuthToken'] ]
+          - name: ScanCentralCiToken
+            value: $[ dependencies.GetFortifyCredentials.outputs['fortifyCiToken.ScanCentralCiToken'] ]
+        steps:
+          - checkout: CER_App
+
+          - task: PowerShell@2
+            displayName: "Cleanup Folders in ESG APP folder"
+            inputs:
+              targetType: "inline"
+              script: |
+                Write-Host "`n`nBuild.SourcesDirectory Directory Contents before cleanup:"
+                Get-ChildItem -Path $(Build.SourcesDirectory)
+
+                # Delete Folders not associated with the UI Project
+                Write-Host "`n`nDeleting folders not related to the UI Project"
+                Get-ChildItem  -Path $(Build.SourcesDirectory) -Exclude Deloitte.Assurance.CER.UI | Remove-Item -Force -Recurse
+
+                Write-Host "`n`nBuild.SourcesDirectory Directory Contents after cleanup:"
+                Get-ChildItem -Path $(Build.SourcesDirectory)
+
+          - task: PowerShell@2
+            displayName: "Cleanup Folders in ESG UI folder"
+            inputs:
+              targetType: "inline"
+              script: |
+                Write-Host "`n`nBuild.SourcesDirectory Directory Contents before cleanup:"
+                Get-ChildItem -Path $(Build.SourcesDirectory)/Deloitte.Assurance.CER.UI
+
+                # Delete Folders not associated with the UI Project
+                Write-Host "`n`nDeleting folders not related to the UI Project"
+                Get-ChildItem  -Path $(Build.SourcesDirectory)/Deloitte.Assurance.CER.UI -Exclude src | Remove-Item -Force -Recurse
+
+                Write-Host "`n`nBuild.SourcesDirectory Directory Contents after cleanup:"
+                Get-ChildItem -Path $(Build.SourcesDirectory)/Deloitte.Assurance.CER.UI
+
+          - task: fortifyvsts.hpe-security-fortify-vsts.build-task-fortify-scancentral-sast.FortifyScanCentralSAST@7
+            displayName: "Fortify Scan UI"
+            inputs:
+              scanCentralCtrlUrl: "$(fortifyCtrlUrl)"
+              scanCentralClientToken: "$(ScanCentralClientAuthToken)"
+              sscUrl: $(fortifySscUrl)"
+              sscCiToken: "$(ScanCentralCiToken)"
+              uploadToSSC: true
+              applicationName: "$(fortifyAppName)"
+              applicationVersion: "GA-Navigator-UI-1-SAST"
+              buildTool: none
+              includeNodeModules: false
+              quiet: false

@@ -1,0 +1,63 @@
+trigger: none
+
+name: $(Date:yyyyMMdd)$(Rev:.r)
+
+parameters:
+  - name: deploymentChannel
+    displayName: Deployment channel
+    type: string
+    default: Feature Release
+    values:
+      - Feature Testing
+      - Feature Release
+
+variables:
+  environmentIndex: "1"
+  artifactName: "navigatorUi"
+  pipelineId: 9703
+
+resources:
+  repositories:
+    - repository: CER_App
+      type: git
+      name: CER_APP
+      ref: refs/heads/develop
+
+stages:
+  - stage: BUILD
+    jobs:
+      - template: build-templates/ui-build-jobs-template.yml
+        parameters:
+          pool: 
+            vmImage: 'windows-latest'
+          azureSubscription: AzureRM_US_AUDIT_PREPROD
+          reactProjects:
+            - job: UiBuild
+              pool: 
+                vmImage: 'windows-latest'
+              variables:
+                repositoryName: CER_App
+                projectName: Deloitte.Assurance.CER.UI
+                artifactName: ${{ variables.artifactName }}
+                # Required due to version conflict between Navigator and React eslint versions.
+                # This disables eslint so the build doesn't fail.
+                DISABLE_ESLINT_PLUGIN: true
+
+  - ${{ if and(eq(parameters.deploymentChannel, 'Feature Testing'), ne(variables['System.DefinitionId'], variables.pipelineId)) }}:
+      - template: stage-templates/ui-feature-stage-template.yml
+        parameters:
+          environmentIndex: ${{ variables.environmentIndex }}
+          webAppServices:
+            navigatorUi:
+              artifactName: ${{ variables.artifactName }}
+              resourceName: ui
+              packageName: Deloitte.Assurance.CER.UI.zip
+
+  - ${{ if and(eq(parameters.deploymentChannel, 'Feature Release'), eq(variables['System.DefinitionId'], variables.pipelineId)) }}:
+      - template: stage-templates/ui-release-stage-template.yml
+        parameters:
+          webAppServices:
+            navigatorUi:
+              artifactName: ${{ variables.artifactName }}
+              resourceName: ui
+              packageName: Deloitte.Assurance.CER.UI.zip

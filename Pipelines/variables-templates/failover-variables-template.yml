@@ -1,0 +1,8 @@
+variables:
+  excludeSecretsFromCopy: "@('QnAFnCode')"
+  primaryKeyVaultName: "$(primaryEnvironmentAlias)$(appName)kv$(primaryLocationCode)"
+  secondaryKeyVaultName: "$(secondaryEnvironmentAlias)$(appName)kv$(secondaryLocationCode)"
+  secondaryResourceGroupName: "azrg-$(secondaryLocationCode)-aud-$(AppName)-$(secondaryEnvironmentName)"
+  primarySqlServerName: "$(primaryEnvironmentAlias)$(AppName)sql$(primaryLocationCode)"
+  secondarySqlServerName: "$(secondaryEnvironmentAlias)$(AppName)sql$(secondaryLocationCode)"
+  sqlFailOverGroup: "$(primarySqlServerName)-failover-group"

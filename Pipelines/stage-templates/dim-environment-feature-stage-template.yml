@@ -1,0 +1,94 @@
+parameters:
+  - name: environmentIndex
+    type: string
+
+stages:
+- stage: AME_DEV_${{ parameters.environmentIndex }}
+  dependsOn: BUILD
+  jobs:
+    - deployment: AME_DEV_${{ parameters.environmentIndex }}
+      environment: INFRASTRUCTURE_TEAM_LEAD
+      pool: ASSURANCE-USE2-NPD-AKS-WIN-RELEASE
+    - template: ../deployment-templates/dim-environment-jobs-template.yml
+      parameters:
+        pool: ASSURANCE-USE2-NPD-AKS-WIN-RELEASE
+        azureSubscription: AzureRM_US_AUDIT_PREPROD
+        geo: ame
+        lifecycle: npd
+        environment: dev
+        environmentIndex: ${{ parameters.environmentIndex }}
+
+- stage: AME_QA_${{ parameters.environmentIndex }}
+  dependsOn: BUILD
+  jobs:
+    - deployment: AME_QA_${{ parameters.environmentIndex }}
+      environment: INFRASTRUCTURE_TEAM_LEAD
+      pool: ASSURANCE-USE2-NPD-AKS-WIN-RELEASE
+    - template: ../deployment-templates/dim-environment-jobs-template.yml
+      parameters:
+        pool: ASSURANCE-USE2-NPD-AKS-WIN-RELEASE
+        azureSubscription: AzureRM_US_AUDIT_PREPROD
+        geo: ame
+        lifecycle: npd
+        environment: qa
+        environmentIndex: ${{ parameters.environmentIndex }}
+
+- stage: EMA_DEV_${{ parameters.environmentIndex }}
+  dependsOn: BUILD
+  jobs:
+    - deployment: EMA_DEV_${{ parameters.environmentIndex }}
+      environment: INFRASTRUCTURE_TEAM_LEAD
+      pool: ASSURANCE-EUW-NPD-AKS-WIN-RELEASE
+    - template: ../deployment-templates/dim-environment-jobs-template.yml
+      parameters:
+        pool: ASSURANCE-EUW-NPD-AKS-WIN-RELEASE
+        azureSubscription: AzureRM_EMA_AUDIT_PREPROD
+        geo: ema
+        lifecycle: npd
+        environment: dev
+        environmentIndex: ${{ parameters.environmentIndex }}
+
+- stage: EMA_QA_${{ parameters.environmentIndex }}
+  dependsOn: BUILD
+  jobs:
+    - deployment: EMA_QA_${{ parameters.environmentIndex }}
+      environment: INFRASTRUCTURE_TEAM_LEAD
+      pool: ASSURANCE-EUW-NPD-AKS-WIN-RELEASE
+    - template: ../deployment-templates/dim-environment-jobs-template.yml
+      parameters:
+        pool: ASSURANCE-EUW-NPD-AKS-WIN-RELEASE
+        azureSubscription: AzureRM_EMA_AUDIT_PREPROD
+        geo: ema
+        lifecycle: npd
+        environment: qa
+        environmentIndex: ${{ parameters.environmentIndex }}
+
+- stage: APA_DEV_${{ parameters.environmentIndex }}
+  dependsOn: BUILD
+  jobs:
+    - deployment: APA_DEV_${{ parameters.environmentIndex }}
+      environment: INFRASTRUCTURE_TEAM_LEAD
+      pool: ASSURANCE-JPE-NPD-AKS-WIN-RELEASE
+    - template: ../deployment-templates/dim-environment-jobs-template.yml
+      parameters:
+        pool: ASSURANCE-JPE-NPD-AKS-WIN-RELEASE
+        azureSubscription: AzureRM_APA_AUDIT_PREPROD
+        geo: apa
+        lifecycle: npd
+        environment: dev
+        environmentIndex: ${{ parameters.environmentIndex }}
+
+- stage: APA_QA_${{ parameters.environmentIndex }}
+  dependsOn: BUILD
+  jobs:
+    - deployment: APA_QA_${{ parameters.environmentIndex }}
+      environment: INFRASTRUCTURE_TEAM_LEAD
+      pool: ASSURANCE-JPE-NPD-AKS-WIN-RELEASE
+    - template: ../deployment-templates/dim-environment-jobs-template.yml
+      parameters:
+        pool: ASSURANCE-JPE-NPD-AKS-WIN-RELEASE
+        azureSubscription: AzureRM_APA_AUDIT_PREPROD
+        geo: apa
+        lifecycle: npd
+        environment: qa
+        environmentIndex: ${{ parameters.environmentIndex }}

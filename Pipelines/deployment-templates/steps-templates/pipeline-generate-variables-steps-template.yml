@@ -1,0 +1,36 @@
+steps:
+  - task: PowerShell@2
+    displayName: "Create Generated Pipeline Variables - $(geo) - $(environment)"
+    inputs:
+      targetType: filePath
+      filePath: '$(Pipeline.Workspace)/Infrastructure/PipelineScripts/Set-GeneratedPipelineVariables.ps1'
+      arguments: '-AppName ''$(appName)'' -LocationCode ''$(locationCode)'' -Environment ''$(environmentFullName)'''
+
+  - task: PowerShell@2
+    displayName: "Load Common Variables - $(geo) - $(environment)"
+    inputs:
+      targetType: filePath
+      filePath: "$(Pipeline.Workspace)/Infrastructure/PipelineScripts/Set-PipelineVariables.ps1"
+      arguments: '-VariableFileName ''$(Pipeline.Workspace)\Infrastructure\Pipelines\common\firewall-rule-variables.json'''
+
+  - task: PowerShell@2
+    displayName: "Create Database Matrix"
+    name: matrix
+    inputs:
+      targetType: filePath
+      filePath: "$(Pipeline.Workspace)/Infrastructure/PipelineScripts/Set-ContainerMatrixPipelineVariables.ps1"
+      arguments: "-AppName '$(appName)' -ContainerNamePrefix '$(containerNamePrefix)' -ContainerInstanceCodes '$(containerInstanceCodes)' -AppDatabases '$(appDbNames)' -AppBlobs '$(appBlobNames)'"
+
+  - task: PowerShell@2
+    displayName: "Create Function App List"
+    inputs:
+      targetType: filePath
+      filePath: "$(Pipeline.Workspace)/Infrastructure/PipelineScripts/Set-FunctionAppPipelineVariables.ps1"
+      arguments: "-AppName '$(appName)' -LocationCode '$(locationCode)' -EnvironmentAlias '$(environmentAlias)' -FunctionAppNames '$(functionAppNames)'"
+
+  - task: PowerShell@2
+    displayName: "Display Variables"
+    inputs:
+      targetType: inline
+      script: |
+        Get-ChildItem -Path env: | Where-Object { $_.Name -notmatch '(AGENT_.*|AZURE_.*|BUILD_.*|RELEASE_.*|SYSTEM_.*)' } | Format-Table -AutoSize

@@ -1,0 +1,242 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "appName": {
+      "type": "string",
+      "metadata": {
+        "description": "Application name used in resource names."
+      }
+    },
+    "locationCode": {
+      "type": "string",
+      "metadata": {
+        "description": "Geographical location where resources reside."
+      },
+      "allowedValues": [
+        "eun",
+        "euw",
+        "jpe",
+        "jpw",
+        "usc",
+        "use2"
+        ]
+    },
+    "environment": {
+      "type": "string",
+      "metadata": {
+        "description": "Environment resources are being deployed for (e.g. dev, qa, etc.)"
+      },
+      "allowedValues": [
+        "bcp",
+        "dev",
+        "int",
+        "load",
+        "npd",
+        "poc",
+        "prod",
+        "qa",
+        "sbx",
+        "stage",
+        "sys",
+        "test",
+        "val"
+      ]
+    },
+    "environmentIndex": {
+      "type": "string",
+      "metadata": {
+        "description": "Alphanumeric index that will be added to Environment Alias."
+      },
+      "defaultValue": ""
+    },
+    "deployGlobalTrafficManager": {
+      "type": "bool",
+      "metadata": {
+        "description": "Flag that indicates if the Level 1, global Traffic Manager should be created."
+      },
+      "defaultValue": false
+    },
+    "globalTrafficRoutingMethod": {
+      "type": "string",
+      "allowedValues": [
+        "Performance",
+        "Weighted",
+        "Priority",
+        "Geographic",
+        "MultiValue",
+        "Subnet"
+      ],
+      "defaultValue": "Priority",
+      "metadata": {
+        "description": "The traffic routing method of the Traffic Manager profile"
+      }
+    },
+    "globalTrafficManagerEndpoints": {
+      "type": "array",
+      "defaultValue": [
+        {
+          "endpointLocation": "Default",
+          "endpointStatus": "Disabled",
+          "locationCode": "Default",
+          "geoMapping": [],
+          "routingMethod": "Default",
+          "target": "Default"
+        }
+      ],
+      "metadata": {
+        "description": "An array of JSON Objects defining each Endpoint for the Traffic Manager."
+      }
+    },
+    "deployGeoTrafficManager": {
+      "type": "bool",
+      "metadata": {
+        "description": "Flag that indicates if the Level 2, location-specific Traffic Manager should be created."
+      },
+      "defaultValue": false
+    },
+    "geoTrafficRoutingMethod": {
+      "type": "string",
+      "allowedValues": [
+        "Performance",
+        "Weighted",
+        "Priority",
+        "Geographic",
+        "MultiValue",
+        "Subnet"
+      ],
+      "defaultValue": "Priority",
+      "metadata": {
+        "description": "The traffic routing method of the Traffic Manager profile"
+      }
+    },
+    "geoTrafficManagerEndpoints": {
+      "type": "array",
+      "defaultValue": [
+        {
+          "name": "Default",
+          "endpointStatus": "Disabled",
+          "target": "Default",
+          "priority": 1
+        }
+      ],
+      "metadata": {
+        "description": "An array of JSON Objects defining each Endpoint for the Traffic Manager."
+      }
+    }
+  },
+  "variables": {
+    "globalTrafficManagerName": "[tolower(concat(variables('rootName'), 'tmglobal', parameters('locationCode')))]",
+    "geoTrafficManagerName": "[tolower(concat(variables('rootName'), 'tmgeo', parameters('locationCode')))]",
+    "rootName": "[toLower(concat(first(parameters('Environment')), parameters('environmentIndex'), parameters('appName')))]",
+    "copy": [
+      {
+        "name": "globalTrafficManagerEndpoints",
+        "count": "[length(parameters('globalTrafficManagerEndpoints'))]",
+        "input": {
+          "endpointLocation": "[parameters('globalTrafficManagerEndpoints')[copyIndex('globalTrafficManagerEndpoints')].endpointLocation]",
+          "endpointStatus": "[parameters('globalTrafficManagerEndpoints')[copyIndex('globalTrafficManagerEndpoints')].endpointStatus]",
+          "geoMapping": "[parameters('globalTrafficManagerEndpoints')[copyIndex('globalTrafficManagerEndpoints')].geoMapping]",
+          "name": "[toLower(concat(variables('rootName'), 'tmgeo', parameters('globalTrafficManagerEndpoints')[copyIndex('globalTrafficManagerEndpoints')].locationCode))]",
+          "routingMethod": "[parameters('globalTrafficManagerEndpoints')[copyIndex('globalTrafficManagerEndpoints')].routingMethod]",
+          "target": "[toLower(concat(variables('rootName'), 'tmgeo', parameters('globalTrafficManagerEndpoints')[copyIndex('globalTrafficManagerEndpoints')].locationCode,'.trafficmanager.net'))]"
+        }
+      },
+      {
+        "name": "geoTrafficManagerEndpoints",
+        "count": "[length(parameters('geoTrafficManagerEndpoints'))]",
+        "input": {
+          "name": "[parameters('geoTrafficManagerEndpoints')[copyIndex('geoTrafficManagerEndpoints')].name]",
+          "endpointStatus": "[parameters('geoTrafficManagerEndpoints')[copyIndex('geoTrafficManagerEndpoints')].endpointStatus]",
+          "target": "[toLower(parameters('geoTrafficManagerEndpoints')[copyIndex('geoTrafficManagerEndpoints')].target)]",
+          "priority": "[parameters('geoTrafficManagerEndpoints')[copyIndex('geoTrafficManagerEndpoints')].priority]"
+        }
+      }
+    ]
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/trafficManagerProfiles",
+      "condition": "[parameters('deployGlobalTrafficManager')]",
+      "name": "[variables('globalTrafficManagerName')]",
+      "apiVersion": "2018-04-01",
+      "location": "global",
+      "scale": null,
+      "properties": {
+        "profileStatus": "Enabled",
+        "trafficRoutingMethod": "[parameters('globalTrafficRoutingMethod')]",
+        "dnsConfig": {
+          "relativeName": "[variables('globalTrafficManagerName')]",
+          "fqdn": "[concat(variables('globalTrafficManagerName'),'.trafficmanager.net')]",
+          "ttl": 300
+        },
+        "monitorConfig": {
+          "protocol": "HTTPS",
+          "port": 443,
+          "path": "/",
+          "intervalInSeconds": 30,
+          "toleratedNumberOfFailures": 3,
+          "timeoutInSeconds": 10
+        },
+        "copy": [
+          {
+            "name": "endpoints",
+            "count": "[length(variables('globalTrafficManagerEndpoints'))]",
+            "input": {
+              "type": "Microsoft.Network/trafficManagerProfiles/externalEndpoints",
+              "name": "[toLower(variables('globalTrafficManagerEndpoints')[copyIndex('endpoints')].name)]",
+              "apiVersion": "2018-04-01",
+              "properties": {
+                "endpointLocation": "[variables('globalTrafficManagerEndpoints')[copyIndex('endpoints')].endpointLocation]",
+                "endpointStatus": "[variables('globalTrafficManagerEndpoints')[copyIndex('endpoints')].endpointStatus]",
+                "geoMapping": "[if(equals(0, length(variables('globalTrafficManagerEndpoints')[copyIndex('endpoints')].geoMapping)), json('null'), variables('globalTrafficManagerEndpoints')[copyIndex('endpoints')].geoMapping)]",
+                "target": "[variables('globalTrafficManagerEndpoints')[copyIndex('endpoints')].target]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/trafficManagerProfiles",
+      "condition": "[parameters('deployGeoTrafficManager')]",
+      "name": "[variables('geoTrafficManagerName')]",
+      "apiVersion": "2018-04-01",
+      "location": "global",
+      "scale": null,
+      "properties": {
+        "profileStatus": "Enabled",
+        "trafficRoutingMethod": "[parameters('geoTrafficRoutingMethod')]",
+        "dnsConfig": {
+          "relativeName": "[variables('geoTrafficManagerName')]",
+          "fqdn": "[tolower(concat(variables('geoTrafficManagerName'),'.trafficmanager.net'))]",
+          "ttl": 300
+        },
+        "monitorConfig": {
+          "protocol": "HTTPS",
+          "port": 443,
+          "path": "/",
+          "intervalInSeconds": 30,
+          "toleratedNumberOfFailures": 3,
+          "timeoutInSeconds": 10
+        },
+        "copy": [
+          {
+            "name": "endpoints",
+            "count": "[length(variables('geoTrafficManagerEndpoints'))]",
+            "input": {
+              "type": "Microsoft.Network/trafficManagerProfiles/externalEndpoints",
+              "name": "[toLower(variables('geoTrafficManagerEndpoints')[copyIndex('endpoints')].name)]",
+              "apiVersion": "2018-04-01",
+              "properties": {
+                "endpointStatus": "[variables('geoTrafficManagerEndpoints')[copyIndex('endpoints')].endpointStatus]",
+                "target": "[variables('geoTrafficManagerEndpoints')[copyIndex('endpoints')].target]",
+                "priority": "[variables('geoTrafficManagerEndpoints')[copyIndex('endpoints')].priority]"
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

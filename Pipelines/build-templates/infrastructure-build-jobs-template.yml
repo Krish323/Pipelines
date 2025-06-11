@@ -1,0 +1,27 @@
+parameters:
+  azureSubscription: AzureRM_US_AUDIT_PREPROD
+  resourceGroupName: AZRG-USE2-AUD-ASSURANCE-CI-VALIDATION
+  scriptCopyOnly: true
+  createArtifact: true
+  validateTemplates: false
+
+jobs:
+  - job: InfrastructureBuild
+    pool: ASSURANCE-USE2-NPD-AKS-WIN-RELEASE
+    variables:
+      - template: ../variables-templates/npd-ame-variables-template.yml
+      - template: ../variables-templates/dev-variables-template.yml
+      - template: ../variables-templates/ame-variables-template.yml
+      - template: ../variables-templates/release-variables-template.yml
+      - template: ../variables-templates/cekvault-variables-template.yml
+        parameters:
+          geo: ame
+          environment: dev
+    steps:
+      - template: steps-templates/infrastructure-build-steps-template.yml
+        parameters:
+          azureSubscription: ${{parameters.azureSubscription}}
+          resourceGroupName: ${{parameters.resourceGroupName}}
+          createArtifact: ${{parameters.createArtifact}}
+          scriptCopyOnly: ${{parameters.scriptCopyOnly}}
+          validateTemplates: ${{parameters.validateTemplates}}

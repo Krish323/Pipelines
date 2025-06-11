@@ -1,0 +1,159 @@
+parameters:
+  - name: webAppServices
+    type: object
+
+stages:
+  - stage: VAL_POST_APPROVAL
+    dependsOn: [AME_VAL, APA_VAL, EMA_VAL]
+    jobs:
+      - deployment: VAL_POST_APPROVAL
+        environment: APPLICATION_STAGE
+        pool: ASSURANCE-EUW-PROD-AKS-WIN-RELEASE
+
+  - stage: PROD_PRE_APPROVAL
+    dependsOn: VAL_POST_APPROVAL
+    jobs:
+      - deployment: PROD_PRE_APPROVAL
+        environment: APPLICATION_PROD_PREAPPROVAL
+        pool: ASSURANCE-EUW-PROD-AKS-WIN-RELEASE
+  
+  - stage: AME_VAL
+    dependsOn: BUILD
+    jobs:
+      - deployment: AME_VAL
+        environment: APPLICATION_STAGE
+        pool: ASSURANCE-USE2-PROD-AKS-WIN-RELEASE
+      - template: ../deployment-templates/ui-deployment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-USE2-PROD-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_US_AUDIT_PROD
+          geo: ame
+          environment: val
+          lifecycle: stg
+          webAppServices: ${{ parameters.webAppServices }}
+
+  - stage: AME_PROD
+    dependsOn: PROD_PRE_APPROVAL
+    condition: succeeded('PROD_PRE_APPROVAL')
+    jobs:
+      - deployment: AME_PROD
+        environment: INFRASTRUCTURE_PROD_AME
+        pool: ASSURANCE-USE2-PROD-AKS-WIN-RELEASE
+      - template: ../deployment-templates/ui-deployment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-USE2-PROD-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_US_AUDIT_PROD
+          geo: ame
+          environment: prod
+          lifecycle: prod
+          webAppServices: ${{ parameters.webAppServices }}
+
+  - stage: AME_BCP
+    dependsOn: AME_PROD
+    jobs:
+      - deployment: AME_BCP
+        environment: INFRASTRUCTURE_PROD_AME
+        pool: ASSURANCE-USC-BCP-AKS-WIN-RELEASE
+      - template: ../deployment-templates/ui-deployment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-USC-BCP-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_US_AUDIT_PROD
+          geo: ame
+          environment: bcp
+          lifecycle: bcp
+          webAppServices: ${{ parameters.webAppServices }}
+
+  - stage: EMA_VAL
+    dependsOn: BUILD
+    jobs:
+      - deployment: EMA_VAL
+        environment: APPLICATION_STAGE
+        pool: ASSURANCE-EUW-PROD-AKS-WIN-RELEASE
+      - template: ../deployment-templates/ui-deployment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-EUW-PROD-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_EMA_AUDIT_PROD
+          geo: ema
+          environment: val
+          lifecycle: stg
+          isPrimaryGeo: true
+          webAppServices: ${{ parameters.webAppServices }}
+
+  - stage: EMA_PROD
+    dependsOn: PROD_PRE_APPROVAL
+    condition: succeeded('PROD_PRE_APPROVAL')
+    jobs:
+      - deployment: EMA_PROD
+        environment: INFRASTRUCTURE_PROD_EMA
+        pool: ASSURANCE-EUW-PROD-AKS-WIN-RELEASE
+      - template: ../deployment-templates/ui-deployment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-EUW-PROD-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_EMA_AUDIT_PROD
+          geo: ema
+          environment: prod
+          lifecycle: prod
+          isPrimaryGeo: true
+          webAppServices: ${{ parameters.webAppServices }}
+
+  - stage: EMA_BCP
+    dependsOn: EMA_PROD
+    jobs:
+      - deployment: EMA_BCP
+        environment: INFRASTRUCTURE_PROD_EMA
+        pool: ASSURANCE-EUN-BCP-AKS-WIN-RELEASE
+      - template: ../deployment-templates/ui-deployment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-EUN-BCP-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_EMA_AUDIT_PROD
+          geo: ema
+          environment: bcp
+          lifecycle: bcp
+          isPrimaryGeo: true
+          webAppServices: ${{ parameters.webAppServices }}
+
+  - stage: APA_VAL
+    dependsOn: BUILD
+    jobs:
+      - deployment: APA_VAL
+        environment: APPLICATION_STAGE
+        pool: ASSURANCE-JPE-PROD-AKS-WIN-RELEASE
+      - template: ../deployment-templates/ui-deployment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-JPE-PROD-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_APA_AUDIT_PROD
+          geo: apa
+          environment: val
+          lifecycle: stg
+          webAppServices: ${{ parameters.webAppServices }}
+
+  - stage: APA_PROD
+    dependsOn: PROD_PRE_APPROVAL
+    condition: succeeded('PROD_PRE_APPROVAL')
+    jobs:
+      - deployment: APA_PROD
+        environment: INFRASTRUCTURE_PROD_APA
+        pool: ASSURANCE-JPE-PROD-AKS-WIN-RELEASE
+      - template: ../deployment-templates/ui-deployment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-JPE-PROD-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_APA_AUDIT_PROD
+          geo: apa
+          environment: prod
+          lifecycle: prod
+          webAppServices: ${{ parameters.webAppServices }}
+
+  - stage: APA_BCP
+    dependsOn: APA_PROD
+    jobs:
+      - deployment: APA_BCP
+        environment: INFRASTRUCTURE_PROD_APA
+        pool: ASSURANCE-JPW-BCP-AKS-WIN-RELEASE
+      - template: ../deployment-templates/ui-deployment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-JPW-BCP-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_APA_AUDIT_PROD
+          geo: apa
+          environment: bcp
+          lifecycle: bcp
+          webAppServices: ${{ parameters.webAppServices }}

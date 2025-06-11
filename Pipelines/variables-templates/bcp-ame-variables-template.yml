@@ -1,0 +1,10 @@
+variables:
+  appDbNames: Navigator_Case_Master
+  containerInstanceCodes: 'US'
+  deployKeyVaultName: fincalcamebcpdeployvault
+  geo: 'ame'
+  lifecycle: 'bcp'
+  lifecycleAlias: 'b'
+  location: 'centralus'
+  locationCode: 'usc'
+  subscriptionId: '8c71ef53-4473-4862-af36-bae6e40451b2'

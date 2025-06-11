@@ -1,0 +1,10 @@
+variables:
+  appDbNames: Navigator_Case_Master
+  containerInstanceCodes: 'AU,GU,HK,ID,IN,JP,KH,KR,LA,MM,MU,MY,NZ,PG,PH,SG,TH,TW,VN'
+  deployKeyVaultName: fincalcapabcpdeployvault
+  geo: 'apa'
+  lifecycle: 'bcp'
+  lifecycleAlias: 'b'
+  location: 'japanwest'
+  locationCode: 'jpw'
+  subscriptionId: 'b2fcc9cc-5757-42d3-980c-d92d66bab682'

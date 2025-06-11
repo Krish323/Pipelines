@@ -1,0 +1,22 @@
+parameters:
+  azureSubscription: ""
+  repositoryName: ""
+  artifactName: "$(geo)-review"
+
+steps:
+  - checkout: ${{ parameters.repositoryName }}
+    clean: true
+
+  - task: AzurePowerShell@4
+    displayName: 'Run Access Review'
+    inputs:
+      azureSubscription: '${{ parameters.azureSubscription }}'
+      ScriptPath: '$(Build.SourcesDirectory)/ControlsAutomation/AzureSQL/New-AzureSQLServerAccessReview.ps1'
+      ScriptArguments: '-SQLServerName "$(sqlServerName)" -KeyVaultName "$(deployKeyVaultName)" -SAPwdSecretName "$(dBAdminPasswordSecretName)" -ResultsPath "$(Build.ArtifactStagingDirectory)"'
+      azurePowerShellVersion: LatestVersion
+
+  - task: PublishPipelineArtifact@1
+    displayName: "Publish Artifact"
+    inputs:
+      artifactName: ${{ parameters.artifactName }}
+      targetPath: $(Build.ArtifactStagingDirectory)

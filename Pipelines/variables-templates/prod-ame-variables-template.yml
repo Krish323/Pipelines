@@ -1,0 +1,11 @@
+variables:
+  appDbNames: Navigator_Case_Master
+  containerInstanceCodes: 'US'
+  deployKeyVaultName: fincalcameprddeployvault
+  geo: 'ame'
+  lifecycle: 'prod'
+  lifecycleAlias: 'p'
+  location: 'eastus2'
+  locationCode: 'use2'
+  subscriptionId: '8c71ef53-4473-4862-af36-bae6e40451b2'
+  primaryEndpointTarget: 'audit-shared-prd.westeurope.cloudapp.azure.com'

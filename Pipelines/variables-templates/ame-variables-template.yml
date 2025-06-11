@@ -1,0 +1,10 @@
+variables:
+  isPrimaryGeo: false
+  primaryLocationCode: "use2"
+  secondaryLocationCode: "usc"
+  primaryFullLocation: "East US 2"
+  secondaryFullLocation: "Central US"
+  primaryAppServicePlanTier: 'PremiumV2'
+  secondaryAppServicePlanTier: 'Standard'
+  maintenancePageVipDnsName: usazsubamecushubprd01-pip-npd.centralus.cloudapp.azure.com
+  maintenancePageAppServiceName: pnavigatormaintenancepageusc

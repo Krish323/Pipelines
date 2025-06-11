@@ -1,0 +1,4 @@
+variables:
+  fortifyAppName: "US-Audit-Assurance"
+  fortifySscUrl: "https://ssc.aat.deloitte.com/ssc"
+  fortifyCtrlUrl: "https://sast.aat.deloitte.com/scancentral-ctrl"

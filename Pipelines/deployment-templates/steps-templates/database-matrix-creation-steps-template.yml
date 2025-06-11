@@ -1,0 +1,16 @@
+steps:
+  - checkout: none
+
+  - task: DownloadPipelineArtifact@2
+    displayName: "Download Infrastructure Artifact"
+    inputs:
+      artifactName: Infrastructure
+      path: $(Pipeline.Workspace)/Infrastructure
+
+  - task: PowerShell@2
+    displayName: "Create Database Matrix"
+    name: "matrix"
+    inputs:
+      targetType: filePath
+      filePath: "$(Pipeline.Workspace)/Infrastructure/PipelineScripts/Set-ContainerMatrixPipelineVariables.ps1"
+      arguments: "-AppName '$(appName)' -ContainerNamePrefix '$(containerNamePrefix)' -ContainerInstanceCodes '$(containerInstanceCodes)' -AppDatabases '$(appDbNames)'"

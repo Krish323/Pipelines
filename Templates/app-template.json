@@ -1,0 +1,1137 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "appName": {
+            "type": "string",
+            "metadata": {
+                "description": "Application name used in resource names."
+            }
+        },
+        "locationCode": {
+            "type": "string",
+            "metadata": {
+                "description": "Geographical location where resources reside."
+            },
+            "allowedValues": [
+                "eun",
+                "euw",
+                "jpe",
+                "jpw",
+                "usc",
+                "use2"
+            ]
+        },
+        "environment": {
+            "type": "string",
+            "metadata": {
+                "description": "Environment resources are being deployed for (e.g. dev, qa, etc.)"
+            },
+            "allowedValues": [
+                "bcp",
+                "dev",
+                "int",
+                "load",
+                "npd",
+                "poc",
+                "prod",
+                "qa",
+                "sbx",
+                "stage",
+                "sys",
+                "test",
+                "uat",
+                "val"
+            ]
+        },
+        "environmentIndex": {
+            "type": "string",
+            "metadata": {
+                "description": "Alphanumeric index that will be added to Environment Alias."
+            },
+            "defaultValue": ""
+        },
+        "primaryEnvironment": {
+            "type": "string",
+            "metadata": {
+                "description": "Primary environment name for prd stages"
+            },
+            "allowedValues": [
+                "bcp",
+                "dev",
+                "int",
+                "load",
+                "npd",
+                "poc",
+                "prod",
+                "qa",
+                "sbx",
+                "stage",
+                "sys",
+                "test",
+                "uat",
+                "val"
+            ],
+            "defaultValue": "[parameters('environment')]"
+        },
+        "primaryLocationCode": {
+            "type": "string",
+            "metadata": {
+                "description": "Primary environment location code for prd stages"
+            },
+            "allowedValues": [
+                "eun",
+                "euw",
+                "jpe",
+                "jpw",
+                "usc",
+                "use2"
+            ],
+            "defaultValue": "[parameters('locationCode')]"
+        },
+        "applicationLogAnalyticsWorkspace": {
+            "type": "string",
+            "metadata": {
+                "description": "Log Analytics Workspace Resource Id"
+            }
+        },
+        "appGatewaySubnets": {
+            "type": "array",
+            "metadata": {
+                "description": "The subnet the App Gateway instance is deployed to"
+            }
+        },
+        "keyManagementSubnets": {
+            "type": "array",
+            "metadata": {
+                "description": "Subnets that Function Host Key management will be performed from"
+            }
+        },
+        "aspSku": {
+            "type": "object",
+            "metadata": {
+                "description": "ASP SKU Description object"
+            },
+            "defaultValue": {
+                "name": "P1v2",
+                "tier": "PremiumV2",
+                "size": "P1v2",
+                "family": "Pv2",
+                "capacity": 1
+            }
+        },
+        "aspAutoscaleCapacity": {
+            "type": "object",
+            "metadata": {
+                "description": "ASP Autoscale Capacity object"
+            },
+            "defaultValue": {
+                "minimum": 1,
+                "maximum": 1,
+                "default": 1
+            }
+        },
+        "aspAutoscaleEnabled": {
+            "type": "bool",
+            "metadata": {
+                "description": "ASP Autoscale enable flag"
+            },
+            "defaultValue": false
+        },
+        "signalRAllowedOrigins": {
+            "type": "array",
+            "metadata": {
+                "description": "An array of URL's to allow access to. * for all URL's"
+            },
+            "defaultValue": [
+                "*"
+            ]
+        },
+        "signalRCapacity": {
+            "type": "int",
+            "defaultValue": 1,
+            "allowedValues": [
+                1,
+                2,
+                5,
+                10,
+                20,
+                50,
+                100
+            ],
+            "metadata": {
+                "description": "Number of SignalR Service Units to deploy."
+            }
+        },
+        "signalRDisableLocalAuth": {
+            "type": "bool",
+            "defaultValue": true,
+            "metadata": {
+                "description": "Disables authentication using Access Keys. This is only allowed in Dev environments."
+            }
+        },
+        "signalRNetworkAclsAllowed": {
+            "type": "array",
+            "metadata": {
+                "description": "Object array, of services to allow"
+            },
+            "defaultValue": [
+                "ClientConnection"
+            ]
+        },
+        "signalRNetworkAclsDenied": {
+            "type": "array",
+            "metadata": {
+                "description": "Object array, of services to deny"
+            },
+            "defaultValue": []
+        },
+        "actionGroupsArray": {
+            "type": "array",
+            "defaultValue": [],
+            "metadata": {
+                "description": "A list of action group name and action group short name"
+
+            }
+        },
+        "availabilityTestArray": {
+            "type": "array",
+            "defaultValue": [],
+            "metadata": {
+                "description": "The list of web tests to run."
+            }
+        },
+        "functionAppNames": {
+            "type": "array",
+            "defaultValue": [],
+            "metadata": {
+                "description": "List of function apps to be deployed."
+            }
+        },
+        "cekKeyVaultIdentity": {
+            "type": "string",
+            "metadata": {
+                "description": "Container Encryption key keyvault MSI"
+            }
+        },
+        "cekKeyVaultResourceGroup": {
+            "type": "string",
+            "metadata": {
+                "description": "Container Encryption key keyvault MSI for Resource Group"
+            }
+        },
+        "deloitteInternalPrivateEndpointSubnetId": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Deloitte internal private endpoint subnet id"
+            }
+        }
+    },
+    "variables": {
+        "appInsightsName": "[toLower(concat(variables('rootName'),'insight', parameters('locationCode')))]",
+        "appServiceApiName": "[toLower(concat(variables('rootName'),'appsvcapi', parameters('locationCode')))]",
+        "appServiceUiName": "[toLower(concat(variables('rootName'), 'appsvcui', parameters('locationCode')))]",
+        "appServiceVnet": {
+            "resourceGroupName": "[resourceGroup().name]",
+            "vnetName": "[toLower(concat(variables('rootName'), 'vnt', parameters('locationCode')))]",
+            "subnetName": "[toLower(concat('sbnappservice', parameters('locationCode')))]"
+        },
+        "aspAutoscaleSettingsName": "[toLower(concat(variables('aspName'), '-autoscale'))]",
+        "aspName": "[toLower(concat(variables('rootName'), 'asp', parameters('locationCode')))]",
+        "availabilityTestRootName": "[toLower(concat(variables('rootName'), 'avltst', parameters('locationCode')))]",
+        "fnStorageAccountName": "[toLower(concat(variables('rootName'), 'stofn', parameters('locationCode')))]",
+        "keyVaultName": "[toLower(concat(variables('rootName'),'kv',parameters('locationCode')))]",
+        "msiName": "[toLower(concat(variables('primaryEnvironmentRootName'), 'msi', parameters('primaryLocationCode')))]",
+        "msiResourceId": "[resourceId(variables('primaryResourceGroupName'), 'Microsoft.ManagedIdentity/userAssignedIdentities', variables('msiName'))]",
+        "omsWorkspaceId": "/subscriptions/8c71ef53-4473-4862-af36-bae6e40451b2/resourcegroups/audit_prod_rg_aaps_sec_oms/providers/microsoft.operationalinsights/workspaces/aaps-sec-oms",
+        "primaryEnvironmentRootName": "[toLower(concat(first(parameters('primaryEnvironment')), parameters('environmentIndex'), parameters('appName')))]",
+        "primaryResourceGroupName": "[toLower(concat('azrg-', parameters('primaryLocationCode'), '-aud-', parameters('appName'), '-', parameters('primaryEnvironment'), parameters('environmentIndex')))]",
+        "privateLinkSubnetName": "[toLower(concat('sbnprivatelink', parameters('locationCode')))]",
+        "rootName": "[toLower(concat(first(parameters('environment')), parameters('environmentIndex'), parameters('appName')))]",
+        "signalRServiceName": "[toLower(concat(variables('rootName'),'signalr', parameters('locationCode')))]",
+        "signalREndpointName": "[tolower(concat(variables('rootName'), 'pesignalr', parameters('locationCode')))]",
+        "vnetArray": "[concat(array(variables('appServiceVnet')), array(parameters('appGatewaySubnets')), parameters('keyManagementSubnets'))]",
+        "cekMsiResourceId": "[resourceId(parameters('cekKeyVaultResourceGroup'), 'Microsoft.ManagedIdentity/userAssignedIdentities', parameters('cekKeyVaultIdentity'))]",
+        "signalRInternalEndpointName": "[tolower(concat(variables('rootName'), 'pesignalrinternal', parameters('locationCode')))]",
+        "isInfrastructureTestingEnvironment": "[equals(parameters('environmentIndex'), '4')]",
+        "isProductionTestingEnvironment": "[or(startsWith(parameters('environment'), 'INT'), startsWith(parameters('environment'), 'TEST'))]",
+        "standardAppServiceLogs": [
+            {
+                "category": "AppServiceHTTPLogs",
+                "categoryGroup": null,
+                "enabled": true
+            },
+            {
+                "category": "AppServiceConsoleLogs",
+                "categoryGroup": null,
+                "enabled": false
+            },
+            {
+                "category": "AppServiceAppLogs",
+                "categoryGroup": null,
+                "enabled": false
+            },
+            {
+                "category": "AppServiceAuditLogs",
+                "categoryGroup": null,
+                "enabled": true
+            },
+            {
+                "category": "AppServiceIPSecAuditLogs",
+                "categoryGroup": null,
+                "enabled": true
+            },
+            {
+                "category": "AppServicePlatformLogs",
+                "categoryGroup": null,
+                "enabled": true
+            }
+        ],
+        "premiumAppServiceLogs": [
+            {
+                "category": "AppServiceAntivirusScanAuditLogs",
+                "categoryGroup": null,
+                "enabled": true
+            },
+
+            {
+                "category": "AppServiceFileAuditLogs",
+                "categoryGroup": null,
+                "enabled": true
+            }
+        ],
+        "appServiceLogs": "[if(contains(parameters('aspSku').tier, 'Premium'), union(variables('standardAppServiceLogs'), variables('premiumAppServiceLogs')), variables('standardAppServiceLogs'))]",
+        "copy": [
+            {
+                "name": "availabilityTests",
+                "count": "[length(parameters('availabilityTestArray'))]",
+                "input": {
+                    "name": "[concat(variables('availabilityTestRootName'), '-', parameters('availabilityTestArray')[copyIndex('availabilityTests')].name)]",
+                    "url": "[parameters('availabilityTestArray')[copyIndex('availabilityTests')].url]",
+                    "description": "[parameters('availabilityTestArray')[copyIndex('availabilityTests')].description]",
+                    "severity": "[parameters('availabilityTestArray')[copyIndex('availabilityTests')].severity]",
+                    "enabled": "[parameters('availabilityTestArray')[copyIndex('availabilityTests')].enabled]",
+                    "expected": "[parameters('availabilityTestArray')[copyIndex('availabilityTests')].expected]",
+                    "frequencySeconds": "[parameters('availabilityTestArray')[copyIndex('availabilityTests')].frequencySeconds]",
+                    "timeoutSeconds": "[parameters('availabilityTestArray')[copyIndex('availabilityTests')].timeoutSeconds]",
+                    "failedLocationCount": "[parameters('availabilityTestArray')[copyIndex('availabilityTests')].failedLocationCount]",
+                    "pingText": "[parameters('availabilityTestArray')[copyIndex('availabilityTests')].pingText]",
+                    "locations": "[parameters('availabilityTestArray')[copyIndex('availabilityTests')].locations]",
+                    "actionGroupName": "[concat(variables('rootName'), 'actgroup', parameters('availabilityTestArray')[copyIndex('availabilityTests')].actionGroupName, parameters('locationCode'))]"
+                }
+            },
+            {
+                "name": "actionGroups",
+                "count": "[length(parameters('actionGroupsArray'))]",
+                "input": {
+                    "name": "[concat(variables('rootName'), 'actgroup', parameters('actionGroupsArray')[copyIndex('actionGroups')].name, parameters('locationCode'))]",
+                    "shortName": "[parameters('actionGroupsArray')[copyIndex('actionGroups')].name]",
+                    "emailReceivers": "[parameters('actionGroupsArray')[copyIndex('actionGroups')].emailReceivers]",
+                    "smsReceivers": "[parameters('actionGroupsArray')[copyIndex('actionGroups')].smsReceivers]",
+                    "voiceReceivers": "[parameters('actionGroupsArray')[copyIndex('actionGroups')].voiceReceivers]",
+                    "webhookReceivers": "[parameters('actionGroupsArray')[copyIndex('actionGroups')].webhookReceivers]"
+                }
+            },
+            {
+                "name": "ipSecurityRestrictions",
+                "count": "[length(variables('vnetArray'))]",
+                "input": {
+                    "vnetSubnetResourceId": "[resourceId(variables('vnetArray')[copyIndex('ipSecurityRestrictions')].resourceGroupName, 'Microsoft.Network/virtualNetworks/subnets', variables('vnetArray')[copyIndex('ipSecurityRestrictions')].vnetName, variables('vnetArray')[copyIndex('ipSecurityRestrictions')].subnetName)]",
+                    "action": "Allow",
+                    "tag": "Default",
+                    "priority": "[copyIndex('ipSecurityRestrictions')]",
+                    "description": "[variables('vnetArray')[copyIndex('ipSecurityRestrictions')].subnetName]"
+                }
+            }
+        ]
+    },
+    "resources": [
+        {
+            "name": "[variables('appInsightsName')]",
+            "type": "Microsoft.Insights/components",
+            "apiVersion": "2020-02-02",
+            "location": "[resourceGroup().location]",
+            "kind": "web",
+            "properties": {
+                "Application_Type": "web",
+                "WorkspaceResourceId": "[parameters('applicationLogAnalyticsWorkspace')]"
+            }
+        },
+        {
+            "name": "[variables('availabilityTests')[copyIndex()].name]",
+            "type": "Microsoft.Insights/webtests",
+            "apiVersion": "2018-05-01-preview",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "[concat('hidden-link:', resourceId('Microsoft.Insights/components', variables('appInsightsName')))]": "Resource"
+            },
+            "copy": {
+                "mode": "Parallel",
+                "name": "availabilityTestCopy",
+                "count": "[length(variables('availabilityTests'))]"
+            },
+            "properties": {
+                "Name": "[variables('availabilityTests')[copyIndex()].name]",
+                "Description": "[variables('availabilityTests')[copyIndex()].description]",
+                "Enabled": "[variables('availabilityTests')[copyIndex()].enabled]",
+                "Frequency": "[variables('availabilityTests')[copyIndex()].frequencySeconds]",
+                "Timeout": "[variables('availabilityTests')[copyIndex()].timeoutSeconds]",
+                "Kind": "ping",
+                "RetryEnabled": true,
+                "Locations": "[variables('availabilityTests')[copyIndex()].locations]",
+                "Configuration": {
+                    "WebTest": "[concat('<WebTest   Name=\"', variables('availabilityTests')[copyIndex()].name, '\"   Enabled=\"True\"         CssProjectStructure=\"\"    CssIteration=\"\"  Timeout=\"', variables('availabilityTests')[copyIndex()].timeoutSeconds, '\"  WorkItemIds=\"\"         xmlns=\"http://microsoft.com/schemas/VisualStudio/TeamTest/2010\"         Description=\"\"  CredentialUserName=\"\"  CredentialPassword=\"\"         PreAuthenticate=\"True\"  Proxy=\"default\"  StopOnError=\"False\"         RecordedResultFile=\"\"  ResultsLocale=\"\">  <Items>  <Request Method=\"GET\"    Version=\"1.1\"  Url=\"', variables('availabilityTests')[copyIndex()].url,   '\" ThinkTime=\"0\"  Timeout=\"', variables('availabilityTests')[copyIndex()].timeoutSeconds, '\" ParseDependentRequests=\"True\"         FollowRedirects=\"True\" RecordResult=\"True\" Cache=\"False\"         ResponseTimeGoal=\"0\"  Encoding=\"utf-8\"  ExpectedHttpStatusCode=\"', variables('availabilityTests')[copyIndex()].expected, '\"         ExpectedResponseUrl=\"\" ReportingName=\"\" IgnoreHttpStatusCode=\"False\" />        </Items>  <ValidationRules> <ValidationRule  Classname=\"Microsoft.VisualStudio.TestTools.WebTesting.Rules.ValidationRuleFindText, Microsoft.VisualStudio.QualityTools.WebTestFramework, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a\" DisplayName=\"Find Text\"         Description=\"Verifies the existence of the specified text in the response.\"         Level=\"High\"  ExecutionOrder=\"BeforeDependents\">  <RuleParameters>        <RuleParameter Name=\"FindText\" Value=\"', variables('availabilityTests')[copyIndex()].pingText, '\" />  <RuleParameter Name=\"IgnoreCase\" Value=\"False\" />  <RuleParameter Name=\"UseRegularExpression\" Value=\"False\" />  <RuleParameter Name=\"PassIfTextFound\" Value=\"True\" />  </RuleParameters> </ValidationRule>  </ValidationRules>  </WebTest>')]"
+                },
+                "SyntheticMonitorId": "[variables('availabilityTests')[copyIndex()].name]"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]"
+            ]
+        },
+        {
+            "name": "[variables('actionGroups')[copyIndex()].name]",
+            "type": "microsoft.insights/actionGroups",
+            "apiVersion": "2021-09-01",
+            "location": "global",
+            "copy": {
+                "mode": "Parallel",
+                "name": "actionGroupsTestCopy",
+                "count": "[length(variables('actionGroups'))]"
+            },
+            "properties": {
+                "groupShortName": "[variables('actionGroups')[copyIndex()].shortName]",
+                "enabled": true,
+                "emailReceivers": "[variables('actionGroups')[copyIndex()].emailReceivers]",
+                "smsReceivers": "[variables('actionGroups')[copyIndex()].smsReceivers]",
+                "voiceReceivers": "[variables('actionGroups')[copyIndex()].voiceReceivers]",
+                "webhookReceivers": "[variables('actionGroups')[copyIndex()].webhookReceivers]"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]"
+            ]
+        },
+        {
+            "name": "[concat(variables('availabilityTests')[copyIndex()].name, 'alert')]",
+            "type": "Microsoft.Insights/metricAlerts",
+            "apiVersion": "2018-03-01",
+            "location": "global",
+            "tags": {
+                "[concat('hidden-link:', resourceId('microsoft.insights/components/', parameters('appName')))]": "Resource",
+                "[concat('hidden-link:', resourceId('microsoft.insights/webtests/', variables('availabilityTests')[copyIndex()].name))]": "Resource"
+            },
+            "copy": {
+                "mode": "Parallel",
+                "name": "alertCopy",
+                "count": "[length(variables('availabilityTests'))]"
+            },
+            "properties": {
+                "description": "[variables('availabilityTests')[copyIndex()].description]",
+                "severity": "[variables('availabilityTests')[copyIndex()].severity]",
+                "enabled": "[variables('availabilityTests')[copyIndex()].enabled]",
+                "scopes": [
+                    "[resourceId('Microsoft.Insights/webtests',variables('availabilityTests')[copyIndex()].name)]",
+                    "[resourceId('Microsoft.Insights/components',variables('appInsightsName'))]"
+                ],
+                "evaluationFrequency": "PT1M",
+                "windowSize": "PT5M",
+                "criteria": {
+                    "odata.type": "Microsoft.Azure.Monitor.WebtestLocationAvailabilityCriteria",
+                    "webTestId": "[resourceId('Microsoft.Insights/webtests', variables('availabilityTests')[copyIndex()].name)]",
+                    "componentId": "[resourceId('Microsoft.Insights/components',variables('appInsightsName'))]",
+                    "failedLocationCount": "[variables('availabilityTests')[copyIndex()].failedLocationCount]"
+                },
+                "actions": [
+                    {
+                        "actionGroupId": "[resourceId('microsoft.insights/actionGroups', variables('availabilityTests')[copyIndex()].actionGroupName)]"
+                    }
+                ]
+            },
+            "dependsOn": [
+                "availabilityTestCopy",
+                "[resourceId('microsoft.insights/actionGroups/', variables('availabilityTests')[copyIndex()].actionGroupName)]",
+                "[variables('appInsightsName')]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/serverfarms",
+            "name": "[variables('aspName')]",
+            "apiVersion": "2015-08-01",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "[parameters('aspSku').name]",
+                "tier": "[parameters('aspSku').tier]",
+                "size": "[parameters('aspSku').size]",
+                "family": "[parameters('aspSku').family]",
+                "capacity": "[parameters('aspSku').capacity]"
+            },
+            "resources": [
+                {
+                    "name": "[variables('aspAutoscaleSettingsName')]",
+                    "apiVersion": "2015-04-01",
+                    "type": "Microsoft.Insights/autoscaleSettings",
+                    "location": "[resourceGroup().location]",
+                    "properties": {
+                        "name": "[variables('aspAutoscaleSettingsName')]",
+                        "enabled": "[parameters('aspAutoscaleEnabled')]",
+                        "targetResourceUri": "[resourceId('Microsoft.Web/serverFarms', variables('aspName'))]",
+                        "profiles": [
+                            {
+                                "name": "Auto Scale Rules",
+                                "capacity": "[parameters('aspAutoscaleCapacity')]",
+                                "rules": [
+                                    {
+                                        "scaleAction": {
+                                            "direction": "Increase",
+                                            "type": "ChangeCount",
+                                            "value": "1",
+                                            "cooldown": "PT2M30S"
+                                        },
+                                        "metricTrigger": {
+                                            "metricName": "CpuPercentage",
+                                            "metricNamespace": "microsoft.web/serverfarms",
+                                            "metricResourceUri": "[resourceId('Microsoft.Web/serverFarms', variables('aspName'))]",
+                                            "operator": "GreaterThan",
+                                            "statistic": "Average",
+                                            "threshold": 70,
+                                            "timeAggregation": "Average",
+                                            "timeGrain": "PT1M",
+                                            "timeWindow": "PT5M"
+                                        }
+                                    },
+                                    {
+                                        "scaleAction": {
+                                            "direction": "Decrease",
+                                            "type": "ChangeCount",
+                                            "value": "1",
+                                            "cooldown": "PT5M"
+                                        },
+                                        "metricTrigger": {
+                                            "metricName": "CpuPercentage",
+                                            "metricNamespace": "microsoft.web/serverfarms",
+                                            "metricResourceUri": "[resourceId('Microsoft.Web/serverFarms', variables('aspName'))]",
+                                            "operator": "LessThan",
+                                            "statistic": "Average",
+                                            "threshold": 30,
+                                            "timeAggregation": "Average",
+                                            "timeGrain": "PT1M",
+                                            "timeWindow": "PT10M"
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    "dependsOn": [
+                        "[variables('aspName')]"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites",
+            "name": "[variables('appServiceUiName')]",
+            "apiVersion": "2020-06-01",
+            "location": "[resourceGroup().location]",
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "properties": {
+                "clientAffinityEnabled": false,
+                "httpsOnly": true,
+                "name": "[variables('appServiceUiName')]",
+                "serverFarmId": "[resourceId('Microsoft.Web/serverFarms', variables('aspName'))]",
+                "siteConfig": {
+                    "alwaysOn": true,
+                    "ftpsState": "disabled",
+                    "ipSecurityRestrictions": "[variables('ipSecurityRestrictions')]",
+                    "scmIpSecurityRestrictionsUseMain": true,
+                    "scmIpSecurityRestrictionsDefaultAction": "Deny",
+                    "minTlsVersion": "1.2",
+                    "phpVersion": "Off",
+                    "use32BitWorkerProcess": false,
+                    "webSocketsEnabled": true,
+                    "http20Enabled": true
+                }
+            },
+            "resources": [
+                {
+                    "name": "virtualNetwork",
+                    "type": "config",
+                    "apiVersion": "2020-06-01",
+                    "properties": {
+                        "subnetResourceId": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('appServiceVnet').vnetName, variables('appServiceVnet').subnetName)]",
+                        "swiftSupported": true
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Web/sites', variables('appServiceUiName'))]"
+                    ]
+                },
+                {
+                    "type": "config",
+                    "name": "appsettings",
+                    "apiVersion": "2020-06-01",
+                    "properties": {
+                        "AppInsights.InstrumentationKey": "[reference(variables('appInsightsName')).InstrumentationKey]",
+                        "APPINSIGHTS_INSTRUMENTATIONKEY": "[reference(variables('appInsightsName')).InstrumentationKey]",
+                        "APPLICATIONINSIGHTS_CONNECTION_STRING": "[reference(variables('appInsightsName')).ConnectionString]",
+                        "ApplicationInsightsAgent_EXTENSION_VERSION": "~2",
+                        "InstrumentationEngine_EXTENSION_VERSION": "~1",
+                        "XDT_MicrosoftApplicationInsights_BaseExtensions": "~1",
+                        "XDT_MicrosoftApplicationInsights_Mode": "recommended",
+                        "WEBSITE_LOAD_CERTIFICATES": "*"
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Web/sites', variables('appServiceUiName'))]"
+                    ]
+                },
+                {
+                    "type": "providers/diagnosticSettings",
+                    "name": "Microsoft.Insights/service",
+                    "apiVersion": "2021-05-01-preview",
+                    "properties": {
+                        "logs": "[variables('appServiceLogs')]",
+                        "metrics": [
+                            {
+                                "timeGrain": null,
+                                "enabled": false,
+                                "category": "AllMetrics"
+                            }
+                        ],
+                        "workspaceId": "[variables('omsWorkspaceId')]",
+                        "logAnalyticsDestinationType": null
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Web/sites', variables('appServiceUiName'))]"
+                    ]
+                }
+            ],
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', variables('aspName'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites",
+            "name": "[variables('appServiceApiName')]",
+            "apiVersion": "2020-06-01",
+            "location": "[resourceGroup().location]",
+            "identity": {
+                "type": "UserAssigned",
+                "userAssignedIdentities": {
+                    "[variables('msiResourceId')]": {}
+                }
+            },
+            "properties": {
+                "clientAffinityEnabled": false,
+                "httpsOnly": true,
+                "name": "[variables('appServiceApiName')]",
+                "serverFarmId": "[resourceId('Microsoft.Web/serverFarms', variables('aspName'))]",
+                "siteConfig": {
+                    "alwaysOn": true,
+                    "ftpsState": "disabled",
+                    "ipSecurityRestrictions": "[variables('ipSecurityRestrictions')]",
+                    "scmIpSecurityRestrictionsUseMain": true,
+                    "scmIpSecurityRestrictionsDefaultAction": "Deny",
+                    "minTlsVersion": "1.2",
+                    "phpVersion": "Off",
+                    "netFrameworkVersion": "v8.0",
+                    "use32BitWorkerProcess": false,
+                    "webSocketsEnabled": true,
+                    "http20Enabled": true
+                }
+            },
+            "resources": [
+                {
+                    "name": "virtualNetwork",
+                    "type": "config",
+                    "apiVersion": "2020-06-01",
+                    "properties": {
+                        "subnetResourceId": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('appServiceVnet').vnetName, variables('appServiceVnet').subnetName)]",
+                        "swiftSupported": true
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Web/sites', variables('appServiceApiName'))]"
+                    ]
+                },
+                {
+                    "type": "config",
+                    "name": "appsettings",
+                    "apiVersion": "2020-06-01",
+                    "properties": {
+                        "AppInsights.InstrumentationKey": "[reference(variables('appInsightsName')).InstrumentationKey]",
+                        "APPINSIGHTS_INSTRUMENTATIONKEY": "[reference(variables('appInsightsName')).InstrumentationKey]",
+                        "APPLICATIONINSIGHTS_CONNECTION_STRING": "[reference(variables('appInsightsName')).ConnectionString]",
+                        "ApplicationInsightsAgent_EXTENSION_VERSION": "~2",
+                        "InstrumentationEngine_EXTENSION_VERSION": "~1",
+                        "XDT_MicrosoftApplicationInsights_BaseExtensions": "~1",
+                        "XDT_MicrosoftApplicationInsights_Mode": "recommended",
+                        "WEBSITE_LOAD_CERTIFICATES": "*"
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Web/sites', variables('appServiceApiName'))]"
+                    ]
+                },
+                {
+                    "type": "providers/diagnosticSettings",
+                    "name": "Microsoft.Insights/service",
+                    "apiVersion": "2021-05-01-preview",
+                    "properties": {
+                        "logs": "[variables('appServiceLogs')]",
+                        "metrics": [
+                            {
+                                "timeGrain": null,
+                                "enabled": false,
+                                "category": "AllMetrics"
+                            }
+                        ],
+                        "workspaceId": "[variables('omsWorkspaceId')]",
+                        "logAnalyticsDestinationType": null
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Web/sites', variables('appServiceApiName'))]"
+                    ]
+                }
+            ],
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', variables('aspName'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "name": "[variables('fnStorageAccountName')]",
+            "apiVersion": "2021-08-01",
+            "kind": "StorageV2",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "Standard_LRS"
+            },
+            "properties": {
+                "name": "[variables('fnStorageAccountName')]",
+                "accessTier": "Hot",
+                "allowBlobPublicAccess": false,
+                "allowCrossTenantReplication": false,
+                "encryption": {
+                    "keySource": "Microsoft.Storage",
+                    "services": {
+                        "blob": {
+                            "enabled": true
+                        }
+                    }
+                },
+                "minimumTlsVersion": "TLS1_2",
+                "networkAcls": {
+                    "bypass": "AzureServices",
+                    "defaultAction": "Deny",
+                    "virtualNetworkRules": [
+                        {
+                            "action": "Allow",
+                            "id": "[resourceId(resourceGroup().name, 'Microsoft.Network/virtualNetworks/subnets', variables('appServiceVnet').vnetName, variables('appServiceVnet').subnetName)]"
+                        }
+                    ]
+                },
+                "supportsHttpsTrafficOnly": true
+            },
+            "resources": [
+                {
+                    "type": "providers/locks",
+                    "name": "Microsoft.Authorization/CannotDelete",
+                    "apiVersion": "2017-04-01",
+                    "properties": {
+                        "level": "CannotDelete"
+                    },
+                    "dependsOn": [
+                        "[variables('fnStorageAccountName')]"
+                    ]
+                },
+                {
+                    "type": "providers/diagnosticsettings",
+                    "name": "/Microsoft.Insights/service",
+                    "apiVersion": "2021-05-01-preview",
+                    "properties": {
+                        "workspaceId": "[variables('omsWorkspaceId')]",
+                        "metrics": [
+                            {
+                                "category": "Transaction",
+                                "enabled": true
+                            }
+                        ]
+                    },
+                    "dependsOn": [
+                        "[variables('fnStorageAccountName')]"
+                    ]
+                },
+                {
+                    "type": "blobServices/providers/diagnosticsettings",
+                    "name": "/default/Microsoft.Insights/service",
+                    "apiVersion": "2021-05-01-preview",
+                    "properties": {
+                        "workspaceId": "[variables('omsWorkspaceId')]",
+                        "logs": [
+                            {
+                                "category": "StorageRead",
+                                "enabled": true
+                            },
+                            {
+                                "category": "StorageWrite",
+                                "enabled": true
+                            },
+                            {
+                                "category": "StorageDelete",
+                                "enabled": true
+                            }
+                        ],
+                        "metrics": [
+                            {
+                                "category": "Transaction",
+                                "enabled": true
+                            }
+                        ]
+                    },
+                    "dependsOn": [
+                        "[variables('fnStorageAccountName')]"
+                    ]
+                },
+                {
+                    "type": "tableServices/providers/diagnosticsettings",
+                    "name": "default/Microsoft.Insights/service",
+                    "apiVersion": "2021-05-01-preview",
+                    "properties": {
+                        "workspaceId": "[variables('omsWorkspaceId')]",
+                        "logs": [
+                            {
+                                "category": "StorageRead",
+                                "enabled": true
+                            },
+                            {
+                                "category": "StorageWrite",
+                                "enabled": true
+                            },
+                            {
+                                "category": "StorageDelete",
+                                "enabled": true
+                            }
+                        ],
+                        "metrics": [
+                            {
+                                "category": "Transaction",
+                                "enabled": true
+                            }
+                        ]
+                    },
+                    "dependsOn": [
+                        "[variables('fnStorageAccountName')]"
+                    ]
+                },
+                {
+                    "type": "fileServices/providers/diagnosticsettings",
+                    "name": "default/Microsoft.Insights/service",
+                    "apiVersion": "2021-05-01-preview",
+                    "properties": {
+                        "workspaceId": "[variables('omsWorkspaceId')]",
+                        "logs": [
+                            {
+                                "category": "StorageRead",
+                                "enabled": true
+                            },
+                            {
+                                "category": "StorageWrite",
+                                "enabled": true
+                            },
+                            {
+                                "category": "StorageDelete",
+                                "enabled": true
+                            }
+                        ],
+                        "metrics": [
+                            {
+                                "category": "Transaction",
+                                "enabled": true
+                            }
+                        ]
+                    },
+                    "dependsOn": [
+                        "[variables('fnStorageAccountName')]"
+                    ]
+                },
+                {
+                    "type": "queueServices/providers/diagnosticsettings",
+                    "name": "default/Microsoft.Insights/service",
+                    "apiVersion": "2021-05-01-preview",
+                    "properties": {
+                        "workspaceId": "[variables('omsWorkspaceId')]",
+                        "logs": [
+                            {
+                                "category": "StorageRead",
+                                "enabled": true
+                            },
+                            {
+                                "category": "StorageWrite",
+                                "enabled": true
+                            },
+                            {
+                                "category": "StorageDelete",
+                                "enabled": true
+                            }
+                        ],
+                        "metrics": [
+                            {
+                                "category": "Transaction",
+                                "enabled": true
+                            }
+                        ]
+                    },
+                    "dependsOn": [
+                        "[variables('fnStorageAccountName')]"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites",
+            "name": "[parameters('functionAppNames')[copyIndex()]]",
+            "apiVersion": "2022-03-01",
+            "identity": {
+                "type": "UserAssigned",
+                "userAssignedIdentities": {
+                    "[variables('msiResourceId')]": {},
+                    "[variables('cekMsiResourceId')]": {}
+                }
+            },
+            "copy": {
+                "mode": "Parallel",
+                "name": "functionAppsCopy",
+                "count": "[length(parameters('functionAppNames'))]"
+            },
+            "kind": "functionapp",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "clientAffinityEnabled": false,
+                "httpsOnly": true,
+                "name": "[parameters('functionAppNames')[copyIndex()]]",
+                "serverFarmId": "[resourceId('Microsoft.Web/serverFarms', variables('aspName'))]",
+                "siteConfig": {
+                    "alwaysOn": true,
+                    "ftpsState": "disabled",
+                    "ipSecurityRestrictions": "[variables('ipSecurityRestrictions')]",
+                    "scmIpSecurityRestrictionsUseMain": true,
+                    "scmIpSecurityRestrictionsDefaultAction": "Deny",
+                    "minTlsVersion": "1.2",
+                    "phpVersion": "Off",
+                    "use32BitWorkerProcess": false,
+                    "netFrameworkVersion": "v8.0",
+                    "webSocketsEnabled": true,
+                    "http20Enabled": true
+                }
+            },
+            "resources": [
+                {
+                    "name": "virtualNetwork",
+                    "type": "config",
+                    "apiVersion": "2020-06-01",
+                    "properties": {
+                        "subnetResourceId": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('appServiceVnet').vnetName, variables('appServiceVnet').subnetName)]",
+                        "swiftSupported": true
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Web/sites', parameters('functionAppNames')[copyIndex()])]"
+                    ]
+                },
+                {
+                    "type": "config",
+                    "name": "appsettings",
+                    "apiVersion": "2020-06-01",
+                    "properties": {
+                        "AppInsights.InstrumentationKey": "[reference(variables('appInsightsName')).InstrumentationKey]",
+                        "APPINSIGHTS_INSTRUMENTATIONKEY": "[reference(variables('appInsightsName')).InstrumentationKey]",
+                        "APPLICATIONINSIGHTS_CONNECTION_STRING": "[reference(variables('appInsightsName')).ConnectionString]",
+                        "ApplicationInsightsAgent_EXTENSION_VERSION": "~2",
+                        "InstrumentationEngine_EXTENSION_VERSION": "~1",
+                        "XDT_MicrosoftApplicationInsights_BaseExtensions": "~1",
+                        "XDT_MicrosoftApplicationInsights_Mode": "recommended",
+                        "WEBSITE_LOAD_CERTIFICATES": "*",
+                        "FUNCTIONS_EXTENSION_VERSION": "~4",
+                        "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+                        "AzureWebJobsStorage": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('fnStorageAccountName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('fnStorageAccountName')), '2019-06-01').keys[0].value)]"
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Web/sites', parameters('functionAppNames')[copyIndex()])]"
+                    ]
+                }
+            ],
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', variables('aspName'))]",
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('fnStorageAccountName'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.SignalRService/SignalR",
+            "apiVersion": "2022-02-01",
+            "name": "[variables('signalRServiceName')]",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "Standard_S1",
+                "tier": "Standard",
+                "size": "S1",
+                "capacity": "[parameters('signalRCapacity')]"
+            },
+            "kind": "SignalR",
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "properties": {
+                "tls": {
+                    "clientCertEnabled": false
+                },
+                "features": [
+                    {
+                        "flag": "ServiceMode",
+                        "value": "Default",
+                        "properties": {}
+                    },
+                    {
+                        "flag": "EnableConnectivityLogs",
+                        "value": "True",
+                        "properties": {}
+                    }
+                ],
+                "cors": {
+                    "allowedOrigins": "[parameters('signalRAllowedOrigins')]"
+                },
+                "upstream": {},
+                "networkACLs": {
+                    "defaultAction": "Deny",
+                    "publicNetwork": {
+                        "allow": "[parameters('signalRNetworkAclsAllowed')]",
+                        "deny": "[parameters('signalRNetworkAclsDenied')]"
+                    },
+                    "privateEndpoints": [
+                        {
+                            "name": "[variables('signalREndpointName')]",
+                            "allow": [
+                                "ServerConnection"
+                            ]
+                        },
+                        {
+                            "name": "[variables('signalRInternalEndpointName')]",
+                            "allow": [
+                                "ClientConnection"
+                            ]
+                        }
+                    ]
+                },
+                "publicNetworkAccess": "Enabled",
+                "disableLocalAuth": "[parameters('signalRDisableLocalAuth')]",
+                "disableAadAuth": false
+            },
+            "resources": [
+                {
+                    "name": "Microsoft.Authorization/CannotDelete",
+                    "type": "providers/locks",
+                    "apiVersion": "2017-04-01",
+                    "properties": {
+                        "level": "CannotDelete"
+                    },
+                    "dependsOn": [
+                        "[variables('signalRServiceName')]"
+                    ]
+                },
+                {
+                    "type": "providers/diagnosticSettings",
+                    "name": "Microsoft.Insights/LogToWorkspace",
+                    "apiVersion": "2021-05-01-preview",
+                    "properties": {
+                        "name": "DiagnosticSettings_workspace",
+                        "workspaceId": "[variables('omsWorkspaceId')]",
+                        "logs": [
+                            {
+                                "category": "AllLogs",
+                                "enabled": true
+                            }
+                        ],
+                        "metrics": [
+                            {
+                                "category": "AllMetrics",
+                                "enabled": true
+                            }
+                        ]
+                    },
+                    "dependsOn": [
+                        "[variables('signalRServiceName')]"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "Microsoft.Network/privateEndpoints",
+            "apiVersion": "2020-06-01",
+            "name": "[variables('signalREndpointName')]",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "subnet": {
+                    "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('appServiceVnet').vnetName, variables('privateLinkSubnetName'))]"
+                },
+                "privateLinkServiceConnections": [
+                    {
+                        "name": "[variables('signalRServiceName')]",
+                        "properties": {
+                            "privateLinkServiceId": "[resourceId('Microsoft.SignalRService/SignalR', variables('signalRServiceName'))]",
+                            "groupIds": [
+                                "signalr"
+                            ]
+                        }
+                    }
+                ]
+            },
+            "resources": [
+                {
+                    "type": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+                    "apiVersion": "2020-03-01",
+                    "name": "[concat(variables('signalREndpointName'),'/signalrDnsGroup')]",
+                    "location": "[resourceGroup().location]",
+                    "properties": {
+                        "privateDnsZoneConfigs": [
+                            {
+                                "name": "privatelink-service-signalr-net",
+                                "properties": {
+                                    "privateDnsZoneId": "[resourceId('Microsoft.Network/privateDnsZones', 'privatelink.service.signalr.net')]"
+                                }
+                            }
+                        ]
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Network/privateEndpoints' , variables('signalREndpointName'))]"
+                    ]
+                }
+            ],
+            "dependsOn": [
+                "[variables('signalRServiceName')]"
+            ]
+        },
+        {
+            "type": "Microsoft.Network/privateEndpoints",
+            "apiVersion": "2020-06-01",
+            "name": "[variables('signalRInternalEndpointName')]",
+            "condition": "[not(or(variables('isProductionTestingEnvironment'),variables('isInfrastructureTestingEnvironment')))]",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "subnet": {
+                    "id": "[parameters('deloitteInternalPrivateEndpointSubnetId')]"
+                },
+                "privateLinkServiceConnections": [
+                    {
+                        "name": "[variables('signalRServiceName')]",
+                        "properties": {
+                            "privateLinkServiceId": "[resourceId('Microsoft.SignalRService/SignalR', variables('signalRServiceName'))]",
+                            "groupIds": [
+                                "signalr"
+                            ]
+                        }
+                    }
+                ]
+            },
+            "dependsOn": [
+                "[variables('signalRServiceName')]"
+            ]
+        }
+    ]
+}

@@ -1,0 +1,11 @@
+variables:
+  appDbNames: Navigator_Case_Master,Navigator_Master
+  containerInstanceCodes: 'AE,AO,AR,AT,BE,BH,BO,BR,CA,CH,CL,CO,CR,CY,DE,DK,EC,EG,ES,FI,FR,GB,GR,GT,HU,IE,IL,IQ,IS,IT,JO,KW,KY,LB,LU,LY,MT,MX,NL,NO,OM,PA,PE,PK,PS,PT,PY,QA,RU1,RU2,SA,SE,SY,TR,UA,UY,VE,YE,ZA'
+  deployKeyVaultName: fincalcemanpddeployvault
+  geo: 'ema'
+  lifecycle: 'npd'
+  lifecycleAlias: 'n'
+  location: 'westeurope'
+  locationCode: 'euw'
+  subscriptionId: '429c67ab-6761-4617-a512-a4743395cede'
+  primaryEndpointTarget: 'audit-shared-npd.westeurope.cloudapp.azure.com'

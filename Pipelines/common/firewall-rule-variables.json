@@ -1,0 +1,922 @@
+{
+    "nonProdIpFirewallRules": [
+      {
+        "name": "AgileThrought 1",
+        "cidr": "4.53.173.238/32",
+        "startIpAddress": "4.53.173.238",
+        "endIpaddress": "4.53.173.238"
+      },
+      {
+        "name": "AgileThrought 2",
+        "cidr": "4.71.10.70/32",
+        "startIpAddress": "4.71.10.70",
+        "endIpaddress": "4.71.10.70"
+      },
+      {
+        "name": "AgileThrought 3",
+        "cidr": "71.41.36.244/32",
+        "startIpAddress": "71.41.36.244",
+        "endIpaddress": "71.41.36.244"
+      },
+      {
+        "name": "AWS af-south-1 Primary",
+        "cidr": "13.245.69.187/32",
+        "startIpAddress": "13.245.69.187",
+        "endIpaddress": "13.245.69.187"
+      },
+      {
+        "name": "AWS af-south-1 Secondary",
+        "cidr": "13.245.173.250/32",
+        "startIpAddress": "13.245.173.250",
+        "endIpaddress": "13.245.173.250"
+      },
+      {
+        "name": "AWS ap-northeast-1 Primary",
+        "cidr": "52.69.113.23/32",
+        "startIpAddress": "52.69.113.23",
+        "endIpaddress": "52.69.113.23"
+      },
+      {
+        "name": "AWS ap-northeast-1 Secondary",
+        "cidr": "35.73.153.69/32",
+        "startIpAddress": "35.73.153.69",
+        "endIpaddress": "35.73.153.69"
+      },
+      {
+        "name": "AWS ap-south-1 Primary",
+        "cidr": "15.206.135.19/32",
+        "startIpAddress": "15.206.135.19",
+        "endIpaddress": "15.206.135.19"
+      },
+      {
+        "name": "AWS ap-south-1 Secondary",
+        "cidr": "3.108.243.239/32",
+        "startIpAddress": "3.108.243.239",
+        "endIpaddress": "3.108.243.239"
+      },
+      {
+        "name": "AWS ap-southeast-1 Primary",
+        "cidr": "18.142.19.133/32",
+        "startIpAddress": "18.142.19.133",
+        "endIpaddress": "18.142.19.133"
+      },
+      {
+        "name": "AWS ap-southeast-1 Secondary",
+        "cidr": "18.142.24.122/32",
+        "startIpAddress": "18.142.24.122",
+        "endIpaddress": "18.142.24.122"
+      },
+      {
+        "name": "AWS ap-southeast-2 Primary",
+        "cidr": "52.65.235.43/32",
+        "startIpAddress": "52.65.235.43",
+        "endIpaddress": "52.65.235.43"
+      },
+      {
+        "name": "AWS ap-southeast-2 Secondary",
+        "cidr": "3.104.95.244/32",
+        "startIpAddress": "3.104.95.244",
+        "endIpaddress": "3.104.95.244"
+      },
+      {
+        "name": "AWS ca-central-1 Primary",
+        "cidr": "52.60.210.14/32",
+        "startIpAddress": "52.60.210.14",
+        "endIpaddress": "52.60.210.14"
+      },
+      {
+        "name": "AWS ca-central-1 Secondary",
+        "cidr": "3.96.31.144/32",
+        "startIpAddress": "3.96.31.144",
+        "endIpaddress": "3.96.31.144"
+      },
+      {
+        "name": "AWS eu-central-1 Primary",
+        "cidr": "18.196.36.202/32",
+        "startIpAddress": "18.196.36.202",
+        "endIpaddress": "18.196.36.202"
+      },
+      {
+        "name": "AWS eu-central-1 Secondary",
+        "cidr": "3.121.96.241/32",
+        "startIpAddress": "3.121.96.241",
+        "endIpaddress": "3.121.96.241"
+      },
+      {
+        "name": "AWS eu-west-1 Primary",
+        "cidr": "34.243.48.32/32",
+        "startIpAddress": "34.243.48.32",
+        "endIpaddress": "34.243.48.32"
+      },
+      {
+        "name": "AWS eu-west-1 Secondary",
+        "cidr": "52.17.157.138/32",
+        "startIpAddress": "52.17.157.138",
+        "endIpaddress": "52.17.157.138"
+      },
+      {
+        "name": "AWS eu-west-2 Primary",
+        "cidr": "3.8.65.214/32",
+        "startIpAddress": "3.8.65.214",
+        "endIpaddress": "3.8.65.214"
+      },
+      {
+        "name": "AWS eu-west-2 Secondary",
+        "cidr": "18.130.63.241/32",
+        "startIpAddress": "18.130.63.241",
+        "endIpaddress": "18.130.63.241"
+      },
+      {
+        "name": "AWS us-east-1 Primary",
+        "cidr": "52.1.20.86/32",
+        "startIpAddress": "52.1.20.86",
+        "endIpaddress": "52.1.20.86"
+      },
+      {
+        "name": "AWS us-east-1 Secondary",
+        "cidr": "35.153.14.105/32",
+        "startIpAddress": "35.153.14.105",
+        "endIpaddress": "35.153.14.105"
+      },
+      {
+        "name": "AWS us-west-2 Primary",
+        "cidr": "54.148.81.184/32",
+        "startIpAddress": "54.148.81.184",
+        "endIpaddress": "54.148.81.184"
+      },
+      {
+        "name": "AWS us-west-2 Secondary",
+        "cidr": "35.81.51.212/32",
+        "startIpAddress": "35.81.51.212",
+        "endIpaddress": "35.81.51.212"
+      },
+      {
+        "name": "Deloitte External 1",
+        "cidr": "167.219.0.0/19",
+        "startIpAddress": "167.219.0.1",
+        "endIpaddress": "167.219.31.255"
+      },
+      {
+        "name": "Deloitte External 2",
+        "cidr": "167.219.32.0/20",
+        "startIpAddress": "167.219.32.1",
+        "endIpaddress": "167.219.47.255"
+      },
+      {
+        "name": "Deloitte External 3",
+        "cidr": "167.219.64.0/18",
+        "startIpAddress": "167.219.64.1",
+        "endIpaddress": "167.219.127.255"
+      },
+      {
+        "name": "Deloitte External 4",
+        "cidr": "167.219.128.0/17",
+        "startIpAddress": "167.219.128.1",
+        "endIpaddress": "167.219.255.255"
+      },
+      {
+        "name": "Deloitte I Block Addresses",
+        "cidr": "103.76.232.0/23",
+        "startIpAddress": "103.76.232.1",
+        "endIpaddress": "103.76.233.255"
+      },
+      {
+        "name": "GlobalProtect Canada Central 1",
+        "cidr": "134.238.243.172/32",
+        "startIpAddress": "134.238.243.172",
+        "endIpaddress": "134.238.243.172"
+      },
+      {
+        "name": "GlobalProtect Canada Central 2",
+        "cidr": "134.238.243.56/32",
+        "startIpAddress": "134.238.243.56",
+        "endIpaddress": "134.238.243.56"
+      },
+      {
+        "name": "GlobalProtect Canada East 1",
+        "cidr": "134.238.147.159/32",
+        "startIpAddress": "134.238.147.159",
+        "endIpaddress": "134.238.147.159"
+      },
+      {
+        "name": "GlobalProtect Canada East 2",
+        "cidr": "134.238.147.180/32",
+        "startIpAddress": "134.238.147.180",
+        "endIpaddress": "134.238.147.180"
+      },
+      {
+        "name": "GlobalProtect France North 1",
+        "cidr": "165.85.255.119/32",
+        "startIpAddress": "165.85.255.119",
+        "endIpaddress": "165.85.255.119"
+      },
+      {
+        "name": "GlobalProtect France North 2",
+        "cidr": "165.85.255.120/32",
+        "startIpAddress": "165.85.255.120",
+        "endIpaddress": "165.85.255.120"
+      },
+      {
+        "name": "GlobalProtect Germany Central 1",
+        "cidr": "208.127.255.209/32",
+        "startIpAddress": "208.127.255.209",
+        "endIpaddress": "208.127.255.209"
+      },
+      {
+        "name": "GlobalProtect Germany Central 2",
+        "cidr": "165.85.152.128/32",
+        "startIpAddress": "165.85.152.128",
+        "endIpaddress": "165.85.152.128"
+      },
+      {
+        "name": "GlobalProtect India South 1",
+        "cidr": "134.238.9.114/32",
+        "startIpAddress": "134.238.9.114",
+        "endIpaddress": "134.238.9.114"
+      },
+      {
+        "name": "GlobalProtect India South 2",
+        "cidr": "134.238.9.113/32",
+        "startIpAddress": "134.238.9.113",
+        "endIpaddress": "134.238.9.113"
+      },
+      {
+        "name": "GlobalProtect Israel 1",
+        "cidr": "130.41.31.108/32",
+        "startIpAddress": "130.41.31.108",
+        "endIpaddress": "130.41.31.108"
+      },
+      {
+        "name": "GlobalProtect Israel 2",
+        "cidr": "130.41.31.25/32",
+        "startIpAddress": "130.41.31.25",
+        "endIpaddress": "130.41.31.25"
+      },
+      {
+        "name": "GlobalProtect Singapore 1",
+        "cidr": "165.85.164.112/32",
+        "startIpAddress": "165.85.164.112",
+        "endIpaddress": "165.85.164.112"
+      },
+      {
+        "name": "GlobalProtect Singapore 2",
+        "cidr": "165.85.164.22/32",
+        "startIpAddress": "165.85.164.22",
+        "endIpaddress": "165.85.164.22"
+      },
+      {
+        "name": "GlobalProtect US Central 1",
+        "cidr": "165.1.176.211/32",
+        "startIpAddress": "165.1.176.211",
+        "endIpaddress": "165.1.176.211"
+      },
+      {
+        "name": "GlobalProtect US Central 2",
+        "cidr": "165.1.176.212/32",
+        "startIpAddress": "165.1.176.212",
+        "endIpaddress": "165.1.176.212"
+      },
+      {
+        "name": "GlobalProtect US Central 3",
+        "cidr": "130.41.243.184/32",
+        "startIpAddress": "130.41.243.184",
+        "endIpaddress": "130.41.243.184"
+      },
+      {
+        "name": "GlobalProtect US Central 4",
+        "cidr": "130.41.243.185/32",
+        "startIpAddress": "130.41.243.185",
+        "endIpaddress": "130.41.243.185"
+      },
+      {
+        "name": "GlobalProtect US East 1",
+        "cidr": "165.1.207.174/32",
+        "startIpAddress": "165.1.207.174",
+        "endIpaddress": "165.1.207.174"
+      },
+      {
+        "name": "GlobalProtect US East 2",
+        "cidr": "165.1.207.176/32",
+        "startIpAddress": "165.1.207.176",
+        "endIpaddress": "165.1.207.176"
+      },
+      {
+        "name": "GlobalProtect US East 3",
+        "cidr": "130.41.111.69/32",
+        "startIpAddress": "130.41.111.69",
+        "endIpaddress": "130.41.111.69"
+      },
+      {
+        "name": "GlobalProtect US East 4",
+        "cidr": "130.41.111.70/32",
+        "startIpAddress": "130.41.111.70",
+        "endIpaddress": "130.41.111.70"
+      },
+      {
+        "name": "GlobalProtect US East 5",
+        "cidr": "128.77.41.153/32",
+        "startIpAddress": "128.77.41.153",
+        "endIpaddress": "128.77.41.153"
+      },
+      {
+        "name": "GlobalProtect US East 6",
+        "cidr": "128.77.41.154/32",
+        "startIpAddress": "128.77.41.154",
+        "endIpaddress": "128.77.41.154"
+      },
+      {
+        "name": "GlobalProtect US East 7",
+        "cidr": "137.83.217.28/32",
+        "startIpAddress": "137.83.217.28",
+        "endIpaddress": "137.83.217.28"
+      },
+      {
+        "name": "GlobalProtect US East 8",
+        "cidr": "137.83.217.29/32",
+        "startIpAddress": "137.83.217.29",
+        "endIpaddress": "137.83.217.29"
+      },
+      {
+        "name": "GlobalProtect US Northeast 1",
+        "cidr": "165.1.206.238/32",
+        "startIpAddress": "165.1.206.238",
+        "endIpaddress": "165.1.206.238"
+      },
+      {
+        "name": "GlobalProtect US Northeast 2",
+        "cidr": "165.1.206.239/32",
+        "startIpAddress": "165.1.206.239",
+        "endIpaddress": "165.1.206.239"
+      },
+      {
+        "name": "GlobalProtect US Northeast 3",
+        "cidr": "130.41.168.204/32",
+        "startIpAddress": "130.41.168.204",
+        "endIpaddress": "130.41.168.204"
+      },
+      {
+        "name": "GlobalProtect US Northeast 4",
+        "cidr": "130.41.168.205/32",
+        "startIpAddress": "130.41.168.205",
+        "endIpaddress": "130.41.168.205"
+      },
+      {
+        "name": "GlobalProtect US Northeast 5",
+        "cidr": "128.77.43.73/32",
+        "startIpAddress": "128.77.43.73",
+        "endIpaddress": "128.77.43.73"
+      },
+      {
+        "name": "GlobalProtect US Northeast 6",
+        "cidr": "128.77.43.74/32",
+        "startIpAddress": "128.77.43.74",
+        "endIpaddress": "128.77.43.74"
+      },
+      {
+        "name": "GlobalProtect US Northeast 7",
+        "cidr": "165.85.45.195/32",
+        "startIpAddress": "165.85.45.195",
+        "endIpaddress": "165.85.45.195"
+      },
+      {
+        "name": "GlobalProtect US Northeast 8",
+        "cidr": "165.85.45.196/32",
+        "startIpAddress": "165.85.45.196",
+        "endIpaddress": "165.85.45.196"
+      },
+      {
+        "name": "GlobalProtect US Northwest 1",
+        "cidr": "130.41.64.209/32",
+        "startIpAddress": "130.41.64.209",
+        "endIpaddress": "130.41.64.209"
+      },
+      {
+        "name": "GlobalProtect US Northwest 2",
+        "cidr": "130.41.64.60/32",
+        "startIpAddress": "130.41.64.60",
+        "endIpaddress": "130.41.64.60"
+      },
+      {
+        "name": "GlobalProtect US Northwest 3",
+        "cidr": "165.85.156.3/32",
+        "startIpAddress": "165.85.156.3",
+        "endIpaddress": "165.85.156.3"
+      },
+      {
+        "name": "GlobalProtect US Northwest 4",
+        "cidr": "165.85.156.4/32",
+        "startIpAddress": "165.85.156.4",
+        "endIpaddress": "165.85.156.4"
+      },
+      {
+        "name": "GlobalProtect US South 1",
+        "cidr": "130.41.174.15/32",
+        "startIpAddress": "130.41.174.15",
+        "endIpaddress": "130.41.174.15"
+      },
+      {
+        "name": "GlobalProtect US South 2",
+        "cidr": "130.41.174.16/32",
+        "startIpAddress": "130.41.174.16",
+        "endIpaddress": "130.41.174.16"
+      },
+      {
+        "name": "GlobalProtect US South 3",
+        "cidr": "165.1.178.179/32",
+        "startIpAddress": "165.1.178.179",
+        "endIpaddress": "165.1.178.179"
+      },
+      {
+        "name": "GlobalProtect US South 4",
+        "cidr": "165.1.178.18/32",
+        "startIpAddress": "165.1.178.18",
+        "endIpaddress": "165.1.178.18"
+      },
+      {
+        "name": "GlobalProtect US South 5",
+        "cidr": "165.85.160.60/32",
+        "startIpAddress": "165.85.160.60",
+        "endIpaddress": "165.85.160.60"
+      },
+      {
+        "name": "GlobalProtect US South 6",
+        "cidr": "165.85.160.61/32",
+        "startIpAddress": "165.85.160.61",
+        "endIpaddress": "165.85.160.61"
+      },
+      {
+        "name": "GlobalProtect US South 7",
+        "cidr": "130.41.212.65/32",
+        "startIpAddress": "130.41.212.65",
+        "endIpaddress": "130.41.212.65"
+      },
+      {
+        "name": "GlobalProtect US South 8",
+        "cidr": "130.41.238.51/32",
+        "startIpAddress": "130.41.238.51",
+        "endIpaddress": "130.41.238.51"
+      },
+      {
+        "name": "GlobalProtect US Southeast 1",
+        "cidr": "165.85.36.204/32",
+        "startIpAddress": "165.85.36.204",
+        "endIpaddress": "165.85.36.204"
+      },
+      {
+        "name": "GlobalProtect US Southeast 2",
+        "cidr": "165.85.36.205/32",
+        "startIpAddress": "165.85.36.205",
+        "endIpaddress": "165.85.36.205"
+      },
+      {
+        "name": "GlobalProtect US Southeast 3",
+        "cidr": "165.1.172.231/32",
+        "startIpAddress": "165.1.172.231",
+        "endIpaddress": "165.1.172.231"
+      },
+      {
+        "name": "GlobalProtect US Southeast 4",
+        "cidr": "165.1.172.239/32",
+        "startIpAddress": "165.1.172.239",
+        "endIpaddress": "165.1.172.239"
+      },
+      {
+        "name": "GlobalProtect US Southwest 1",
+        "cidr": "165.1.210.81/32",
+        "startIpAddress": "165.1.210.81",
+        "endIpaddress": "165.1.210.81"
+      },
+      {
+        "name": "GlobalProtect US Southwest 2",
+        "cidr": "165.1.210.83/32",
+        "startIpAddress": "165.1.210.83",
+        "endIpaddress": "165.1.210.83"
+      },
+      {
+        "name": "GlobalProtect US Southwest 3",
+        "cidr": "130.41.94.2/32",
+        "startIpAddress": "130.41.94.2",
+        "endIpaddress": "130.41.94.2"
+      },
+      {
+        "name": "GlobalProtect US Southwest 4",
+        "cidr": "130.41.94.3/32",
+        "startIpAddress": "130.41.94.3",
+        "endIpaddress": "130.41.94.3"
+      },
+      {
+        "name": "GlobalProtect US West 1",
+        "cidr": "165.1.214.38/32",
+        "startIpAddress": "165.1.214.38",
+        "endIpaddress": "165.1.214.38"
+      },
+      {
+        "name": "GlobalProtect US West 2",
+        "cidr": "165.1.214.128/32",
+        "startIpAddress": "165.1.214.128",
+        "endIpaddress": "165.1.214.128"
+      },
+      {
+        "name": "GlobalProtect US West 3",
+        "cidr": "165.85.51.5/32",
+        "startIpAddress": "165.85.51.5",
+        "endIpaddress": "165.85.51.5"
+      },
+      {
+        "name": "GlobalProtect US West 4",
+        "cidr": "165.85.51.8/32",
+        "startIpAddress": "165.85.51.8",
+        "endIpaddress": "165.85.51.8"
+      },
+      {
+        "name": "Kanini Public IP",
+        "cidr": "45.16.8.28/32",
+        "startIpAddress": "45.16.8.28",
+        "endIpaddress": "45.16.8.28"
+      },
+      {
+        "name": "Netskope DC Chennai 1-1",
+        "cidr": "24.239.131.30/32",
+        "startIpAddress": "24.239.131.30",
+        "endIpaddress": "24.239.131.30"
+      },
+      {
+        "name": "Netskope DC Chennai 1-2",
+        "cidr": "24.239.131.31/32",
+        "startIpAddress": "24.239.131.31",
+        "endIpaddress": "24.239.131.31"
+      },
+      {
+        "name": "Netskope DC Chennai 2-1",
+        "cidr": "24.239.143.13/32",
+        "startIpAddress": "24.239.143.13",
+        "endIpaddress": "24.239.143.13"
+      },
+      {
+        "name": "Netskope DC Chennai 2-2",
+        "cidr": "24.239.143.14/32",
+        "startIpAddress": "24.239.143.14",
+        "endIpaddress": "24.239.143.14"
+      },
+      {
+        "name": "Netskope DC Hyderabad 1-1",
+        "cidr": "24.239.142.70/32",
+        "startIpAddress": "24.239.142.70",
+        "endIpaddress": "24.239.142.70"
+      },
+      {
+        "name": "Netskope DC Hyderabad 1-2",
+        "cidr": "24.239.142.71/32",
+        "startIpAddress": "24.239.142.71",
+        "endIpaddress": "24.239.142.71"
+      },
+      {
+        "name": "Netskope DC Kolkata 1-1",
+        "cidr": "24.239.146.67/32",
+        "startIpAddress": "24.239.146.67",
+        "endIpaddress": "24.239.146.67"
+      },
+      {
+        "name": "Netskope DC Kolkata 1-2",
+        "cidr": "24.239.146.68/32",
+        "startIpAddress": "24.239.146.68",
+        "endIpaddress": "24.239.146.68"
+      },
+      {
+        "name": "Netskope DC Mumbai 1-1",
+        "cidr": "24.239.140.30/32",
+        "startIpAddress": "24.239.140.30",
+        "endIpaddress": "24.239.140.30"
+      },
+      {
+        "name": "Netskope DC Mumbai 1-2",
+        "cidr": "24.239.140.31/32",
+        "startIpAddress": "24.239.140.31",
+        "endIpaddress": "24.239.140.31"
+      },
+      {
+        "name": "Netskope DC Mumbai 2-1",
+        "cidr": "24.239.151.13/32",
+        "startIpAddress": "24.239.151.13",
+        "endIpaddress": "24.239.151.13"
+      },
+      {
+        "name": "Netskope DC Mumbai 2-2",
+        "cidr": "24.239.151.14/32",
+        "startIpAddress": "24.239.151.14",
+        "endIpaddress": "24.239.151.14"
+      },
+      {
+        "name": "Netskope DC New Delhi 1-1",
+        "cidr": "24.239.134.30/32",
+        "startIpAddress": "24.239.134.30",
+        "endIpaddress": "24.239.134.30"
+      },
+      {
+        "name": "Netskope DC New Delhi 1-2",
+        "cidr": "24.239.134.31/32",
+        "startIpAddress": "24.239.134.31",
+        "endIpaddress": "24.239.134.31"
+      },
+      {
+        "name": "Netskope DC New Delhi 2-1",
+        "cidr": "24.239.150.13/32",
+        "startIpAddress": "24.239.150.13",
+        "endIpaddress": "24.239.150.13"
+      },
+      {
+        "name": "Netskope DC New Delhi 2-2",
+        "cidr": "24.239.150.14/32",
+        "startIpAddress": "24.239.150.14",
+        "endIpaddress": "24.239.150.14"
+      },
+      {
+        "name": "Netskope DC Ashburn 1-1",
+        "cidr": "24.206.89.112/32",
+        "startIpAddress": "24.206.89.112",
+        "endIpaddress": "24.206.89.112"
+      },
+      {
+        "name": "Netskope DC Ashburn 1-2",
+        "cidr": "24.206.89.113/32",
+        "startIpAddress": "24.206.89.113",
+        "endIpaddress": "24.206.89.113"
+      },
+      {
+        "name": "Netskope DC Atlanta 1-1",
+        "cidr": "24.206.70.40/32",
+        "startIpAddress": "24.206.70.40",
+        "endIpaddress": "24.206.70.40"
+      },
+      {
+        "name": "Netskope DC Atlanta 1-2",
+        "cidr": "24.206.70.41/32",
+        "startIpAddress": "24.206.70.41",
+        "endIpaddress": "24.206.70.41"
+      },
+      {
+        "name": "Netskope DC Atlanta 2-1",
+        "cidr": "24.206.64.8/32",
+        "startIpAddress": "24.206.64.8",
+        "endIpaddress": "24.206.64.8"
+      },
+      {
+        "name": "Netskope DC Atlanta 2-2",
+        "cidr": "24.206.64.9/32",
+        "startIpAddress": "24.206.64.9",
+        "endIpaddress": "24.206.64.9"
+      },
+      {
+        "name": "Netskope DC Boston 1-1",
+        "cidr": "24.206.88.112/32",
+        "startIpAddress": "24.206.88.112",
+        "endIpaddress": "24.206.88.112"
+      },
+      {
+        "name": "Netskope DC Boston 1-2",
+        "cidr": "24.206.88.113/32",
+        "startIpAddress": "24.206.88.113",
+        "endIpaddress": "24.206.88.113"
+      },
+      {
+        "name": "Netskope DC Chicago 1-1",
+        "cidr": "24.206.84.58/32",
+        "startIpAddress": "24.206.84.58",
+        "endIpaddress": "24.206.84.58"
+      },
+      {
+        "name": "Netskope DC Chicago 1-2",
+        "cidr": "24.206.84.59/32",
+        "startIpAddress": "24.206.84.59",
+        "endIpaddress": "24.206.84.59"
+      },
+      {
+        "name": "Netskope DC Chicago 2-1",
+        "cidr": "24.206.79.119/32",
+        "startIpAddress": "24.206.79.119",
+        "endIpaddress": "24.206.79.119"
+      },
+      {
+        "name": "Netskope DC Chicago 2-2",
+        "cidr": "24.206.79.120/32",
+        "startIpAddress": "24.206.79.120",
+        "endIpaddress": "24.206.79.120"
+      },
+      {
+        "name": "Netskope DC Dallas 1-1",
+        "cidr": "24.206.80.48/32",
+        "startIpAddress": "24.206.80.48",
+        "endIpaddress": "24.206.80.48"
+      },
+      {
+        "name": "Netskope DC Dallas 1-2",
+        "cidr": "24.206.80.49/32",
+        "startIpAddress": "24.206.80.49",
+        "endIpaddress": "24.206.80.49"
+      },
+      {
+        "name": "Netskope DC Dallas 2-1",
+        "cidr": "24.239.179.18/32",
+        "startIpAddress": "24.239.179.18",
+        "endIpaddress": "24.239.179.18"
+      },
+      {
+        "name": "Netskope DC Dallas 2-2",
+        "cidr": "24.239.179.19/32",
+        "startIpAddress": "24.239.179.19",
+        "endIpaddress": "24.239.179.19"
+      },
+      {
+        "name": "Netskope DC Denver 1-1",
+        "cidr": "24.206.77.40/32",
+        "startIpAddress": "24.206.77.40",
+        "endIpaddress": "24.206.77.40"
+      },
+      {
+        "name": "Netskope DC Denver 1-2",
+        "cidr": "24.206.77.41/32",
+        "startIpAddress": "24.206.77.41",
+        "endIpaddress": "24.206.77.41"
+      },
+      {
+        "name": "Netskope DC Los Angeles 1-1",
+        "cidr": "24.206.66.40/32",
+        "startIpAddress": "24.206.66.40",
+        "endIpaddress": "24.206.66.40"
+      },
+      {
+        "name": "Netskope DC Los Angeles 1-2",
+        "cidr": "24.206.66.41/32",
+        "startIpAddress": "24.206.66.41",
+        "endIpaddress": "24.206.66.41"
+      },
+      {
+        "name": "Netskope DC Los Angeles 2-1",
+        "cidr": "24.206.69.116/32",
+        "startIpAddress": "24.206.69.116",
+        "endIpaddress": "24.206.69.116"
+      },
+      {
+        "name": "Netskope DC Los Angeles 2-2",
+        "cidr": "24.206.69.117/32",
+        "startIpAddress": "24.206.69.117",
+        "endIpaddress": "24.206.69.117"
+      },
+      {
+        "name": "Netskope DC Miami 1-1",
+        "cidr": "24.206.68.40/32",
+        "startIpAddress": "24.206.68.40",
+        "endIpaddress": "24.206.68.40"
+      },
+      {
+        "name": "Netskope DC Miami 1-2",
+        "cidr": "24.206.68.41/32",
+        "startIpAddress": "24.206.68.41",
+        "endIpaddress": "24.206.68.41"
+      },
+      {
+        "name": "Netskope DC Miami 2-1",
+        "cidr": "24.206.91.92/32",
+        "startIpAddress": "24.206.91.92",
+        "endIpaddress": "24.206.91.92"
+      },
+      {
+        "name": "Netskope DC Miami 2-2",
+        "cidr": "24.206.91.93/32",
+        "startIpAddress": "24.206.91.93",
+        "endIpaddress": "24.206.91.93"
+      },
+      {
+        "name": "Netskope DC New York City 1-1",
+        "cidr": "24.206.82.51/32",
+        "startIpAddress": "24.206.82.51",
+        "endIpaddress": "24.206.82.51"
+      },
+      {
+        "name": "Netskope DC New York City 1-2",
+        "cidr": "24.206.82.52/32",
+        "startIpAddress": "24.206.82.52",
+        "endIpaddress": "24.206.82.52"
+      },
+      {
+        "name": "Netskope DC New York City 2-1",
+        "cidr": "24.206.78.44/32",
+        "startIpAddress": "24.206.78.44",
+        "endIpaddress": "24.206.78.44"
+      },
+      {
+        "name": "Netskope DC New York City 2-2",
+        "cidr": "24.206.78.45/32",
+        "startIpAddress": "24.206.78.45",
+        "endIpaddress": "24.206.78.45"
+      },
+      {
+        "name": "Netskope DC New York City 3-1",
+        "cidr": "24.239.176.22/32",
+        "startIpAddress": "24.239.176.22",
+        "endIpaddress": "24.239.176.22"
+      },
+      {
+        "name": "Netskope DC New York City 3-2",
+        "cidr": "24.239.176.23/32",
+        "startIpAddress": "24.239.176.23",
+        "endIpaddress": "24.239.176.23"
+      },
+      {
+        "name": "Netskope DC Philadelphia 1-1",
+        "cidr": "24.239.178.20/32",
+        "startIpAddress": "24.239.178.20",
+        "endIpaddress": "24.239.178.20"
+      },
+      {
+        "name": "Netskope DC Philadelphia 1-2",
+        "cidr": "24.239.178.21/32",
+        "startIpAddress": "24.239.178.21",
+        "endIpaddress": "24.239.178.21"
+      },
+      {
+        "name": "Netskope DC Phoenix 1-1",
+        "cidr": "24.206.72.40/32",
+        "startIpAddress": "24.206.72.40",
+        "endIpaddress": "24.206.72.40"
+      },
+      {
+        "name": "Netskope DC Phoenix 1-2",
+        "cidr": "24.206.72.41/32",
+        "startIpAddress": "24.206.72.41",
+        "endIpaddress": "24.206.72.41"
+      },
+      {
+        "name": "Netskope DC San Francisco 1-1",
+        "cidr": "24.206.73.50/32",
+        "startIpAddress": "24.206.73.50",
+        "endIpaddress": "24.206.73.50"
+      },
+      {
+        "name": "Netskope DC San Francisco 1-2",
+        "cidr": "24.206.73.51/32",
+        "startIpAddress": "24.206.73.51",
+        "endIpaddress": "24.206.73.51"
+      },
+      {
+        "name": "Netskope DC Seattle 1-1",
+        "cidr": "24.206.71.40/32",
+        "startIpAddress": "24.206.71.40",
+        "endIpaddress": "24.206.71.40"
+      },
+      {
+        "name": "Netskope DC Seattle 1-2",
+        "cidr": "24.206.71.41/32",
+        "startIpAddress": "24.206.71.41",
+        "endIpaddress": "24.206.71.41"
+      },
+      {
+        "name": "Netskope DC Seattle 2-1",
+        "cidr": "24.206.90.8/32",
+        "startIpAddress": "24.206.90.8",
+        "endIpaddress": "24.206.90.8"
+      },
+      {
+        "name": "Netskope DC Seattle 2-2",
+        "cidr": "24.206.90.9/32",
+        "startIpAddress": "24.206.90.9",
+        "endIpaddress": "24.206.90.9"
+      },
+      {
+        "name": "Netskope DC Sterling 1-1",
+        "cidr": "24.206.76.48/32",
+        "startIpAddress": "24.206.76.48",
+        "endIpaddress": "24.206.76.48"
+      },
+      {
+        "name": "Netskope DC Sterling 1-2",
+        "cidr": "24.206.76.49/32",
+        "startIpAddress": "24.206.76.49",
+        "endIpaddress": "24.206.76.49"
+      },
+      {
+        "name": "Netskope DC St Louis 1-1",
+        "cidr": "24.239.180.28/32",
+        "startIpAddress": "24.239.180.28",
+        "endIpaddress": "24.239.180.28"
+      },
+      {
+        "name": "Netskope DC St Louis 1-2",
+        "cidr": "24.239.180.29/32",
+        "startIpAddress": "24.239.180.29",
+        "endIpaddress": "24.239.180.29"
+      },
+      {
+        "name": "Netskope DC Tel Aviv 1-1",
+        "cidr": "24.206.105.28/32",
+        "startIpAddress": "24.206.105.28",
+        "endIpaddress": "24.206.105.28"
+      },
+      {
+        "name": "Netskope DC Tel Aviv 1-2",
+        "cidr": "24.206.105.29/32",
+        "startIpAddress": "24.206.105.29",
+        "endIpaddress": "24.206.105.29"
+      }
+    ]
+  }  

@@ -1,0 +1,10 @@
+variables:
+  isPrimaryGeo: true
+  primaryLocationCode: "euw"
+  secondaryLocationCode: "eun"
+  primaryFullLocation: "West Europe"
+  secondaryFullLocation: "North Europe"
+  primaryAppServicePlanTier: 'PremiumV2'
+  secondaryAppServicePlanTier: 'Standard'
+  maintenancePageVipDnsName: usazsubemaeunhub-pip-prd.northeurope.cloudapp.azure.com
+  maintenancePageAppServiceName: pnavigatormaintenancepageeun

@@ -1,0 +1,120 @@
+parameters:
+  azureSubscription: ""
+  appServiceName: "$(environmentAlias)$(appName)fn$(resourceName)$(locationCode)"
+
+steps:
+  - checkout: none
+  
+  - task: DownloadPipelineArtifact@2
+    displayName: "Download Infrastructure Artifact"
+    inputs:
+      artifactName: Infrastructure
+      path: $(Pipeline.Workspace)/Infrastructure
+
+  - task: DownloadPipelineArtifact@2
+    displayName: "Download Application Artifact"
+    inputs:
+      artifactName: $(artifactName)
+      path: $(Pipeline.Workspace)/Application
+  
+  - task: PowerShell@2
+    displayName: "Create Generated Pipeline Variables - $(geo) - $(environmentFullName)"
+    inputs:
+      targetType: filePath
+      filePath: "$(Pipeline.Workspace)/Infrastructure/PipelineScripts/Set-GeneratedPipelineVariables.ps1"
+      arguments: '-AppName "$(appName)" -LocationCode "$(locationCode)" -Environment "$(environmentFullName)"'
+
+  - task: AzurePowerShell@5
+    displayName: 'Get Application MSI ClientId- $(geo) - $(environmentFullName)'
+    inputs:
+      azureSubscription: '${{ parameters.azureSubscription }}'
+      ScriptType: FilePath
+      ScriptPath: '$(Pipeline.Workspace)/Infrastructure/Scripts/Get-UserAssignedIdentityClientId.ps1'
+      ScriptArguments: '-UserAssignedIdentityName "$(applicationMsiName)" -PipelineVariableName "applicationMsiClientId" -ResourceGroupName "$(primaryResourceGroupName)"'
+      azurePowerShellVersion: LatestVersion
+
+  - task: AzurePowerShell@5
+    displayName: "Get CEK vault ClientId- $(geo) - $(environmentFullName)"
+    inputs:
+      azureSubscription: "${{ parameters.azureSubscription }}"
+      ScriptType: FilePath
+      ScriptPath: "$(Pipeline.Workspace)/Infrastructure/Scripts/Get-UserAssignedIdentityClientId.ps1"
+      ScriptArguments: '-UserAssignedIdentityName "$(cekKeyVaultIdentity)" -PipelineVariableName "cekMsiClientId" -ResourceGroupName "$(cekKeyVaultResourceGroup)"'
+      azurePowerShellVersion: LatestVersion
+
+  - task: AzurePowerShell@5
+    displayName: 'Get-AppInsightsConnectionString - ${{ parameters.appServiceName }}'
+    inputs:
+      azureSubscription: '${{ parameters.azureSubscription }}'
+      ScriptType: FilePath
+      ScriptPath: '$(Pipeline.Workspace)/Infrastructure/Scripts/Get-AppInsightsConnectionString.ps1'
+      ScriptArguments: '-ResourceGroupName "$(resourceGroupName)" -AppInsightsName "$(appInsightsName)" -PipelineVariableName ''appInsightsConnectionString'''
+      azurePowerShellVersion: LatestVersion
+
+  - task: PowerShell@2
+    displayName: 'Display Variables'
+    inputs:
+      targetType: inline
+      script: |
+        Get-ChildItem -Path env: | Where-Object { $_.Name -notmatch '(AGENT_.*|AZURE_.*|BUILD_.*|RELEASE_.*|SYSTEM_.*)' }   
+
+  - task: AzureAppServiceManage@0
+    displayName: "Stop ${{ parameters.appServiceName }}"
+    inputs:
+      azureSubscription: "${{ parameters.azureSubscription }}"
+      Action: "Stop Azure App Service"
+      WebAppName: "${{ parameters.appServiceName }}"
+
+  - task: ExtractFiles@1
+    displayName: 'Extract App Artifact - ${{ parameters.appServiceName }}'
+    inputs:
+      archiveFilePatterns: "$(Pipeline.Workspace)/Application/$(packageName)"
+      destinationFolder: "$(System.DefaultWorkingDirectory)/${{ parameters.appServiceName }}/Unzip"
+   
+  - task: replacetokens@6
+    displayName: 'Replace Tokens - ${{ parameters.appServiceName }}'
+    inputs:
+      sources: '**/$(geo).$(environment).settings.json'
+      includeDotPaths: false
+      ifNoFilesFound: 'error'
+      missingVarLog: 'error'
+      missingVarAction: 'keep'
+      tokenPattern: 'doubleunderscores'
+      logLevel: 'warn'
+
+  - task: AzurePowerShell@5
+    displayName: 'Set Function Config - ${{ parameters.appServiceName }}'
+    inputs:
+      azureSubscription: '${{ parameters.azureSubscription }}'
+      ScriptType: FilePath
+      ScriptPath: '$(Pipeline.Workspace)/Infrastructure/Scripts/Set-FunctionConfigFromFile.ps1'
+      ScriptArguments: '-ArtifactFolder "$(System.DefaultWorkingDirectory)\${{ parameters.appServiceName }}\Unzip" -SettingsFilePattern "$(environmentConfigFile)" -AppServiceName "${{ parameters.appServiceName }}"'
+      azurePowerShellVersion: LatestVersion
+  
+  - task: ArchiveFiles@2
+    displayName: 'Archive Updated App Artifact - ${{ parameters.appServiceName }}'
+    inputs:
+      rootFolderOrFile: '$(System.DefaultWorkingDirectory)\${{ parameters.appServiceName }}\Unzip'
+      includeRootFolder: false
+      archiveFile: '$(System.DefaultWorkingDirectory)\${{ parameters.appServiceName }}.zip'
+      replaceExistingArchive: true
+
+  - task: AzureRmWebAppDeployment@4
+    displayName: "Deploy Code to ${{ parameters.appServiceName }}"
+    inputs:
+      azureSubscription: "${{ parameters.azureSubscription }}"
+      appType: webApp
+      WebAppName: "${{ parameters.appServiceName }}"
+      Package: '$(System.DefaultWorkingDirectory)/${{ parameters.appServiceName }}.zip'
+      DeploymentType: webDeploy
+      TakeAppOfflineFlag: true
+      UseWebDeploy: true
+      RemoveAdditionalFilesFlag: true
+      ExcludeFilesFromAppDataFlag: true
+
+  - task: AzureAppServiceManage@0
+    displayName: "Start ${{ parameters.appServiceName }}"
+    inputs:
+      azureSubscription: "${{ parameters.azureSubscription }}"
+      Action: "Start Azure App Service"
+      WebAppName: "${{ parameters.appServiceName }}"

@@ -1,0 +1,11 @@
+variables:
+  appDbNames: Navigator_Case_Master
+  containerInstanceCodes: 'US'
+  deployKeyVaultName: fincalcamenpddeployvault
+  geo: 'ame'
+  lifecycle: 'npd'
+  lifecycleAlias: 'n'
+  location: 'eastus2'
+  locationCode: 'use2'
+  subscriptionId: 'd7ac9c0b-155b-42a8-9d7d-87e883f82d5d'
+  primaryEndpointTarget: 'audit-shared-npd.westeurope.cloudapp.azure.com'

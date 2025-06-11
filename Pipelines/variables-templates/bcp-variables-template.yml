@@ -1,0 +1,26 @@
+parameters:
+  - name: environmentIndex
+    type: string
+    default: ""
+  - name: geo
+    type: string
+    default: ""
+
+variables:
+  developerDatabaseRoles:
+  deploySecondaryGeos: true
+  environment: bcp
+  environmentIndex: ${{ parameters.environmentIndex }}
+  environmentAlias: b$(environmentIndex)
+  primaryEnvironmentAlias: "p"
+  primaryEnvironmentName: "prod"
+  secondaryEnvironmentAlias: "b"
+  secondaryEnvironmentName: "bcp"
+  functionAppNames: "QnA"
+
+  ${{ if in(parameters.geo, 'ame') }}:
+    deloitteInternalSubnetId: "/subscriptions/8c71ef53-4473-4862-af36-bae6e40451b2/resourceGroups/AUDIT_PROD_RG_Network/providers/Microsoft.Network/virtualNetworks/azucusprdvnt01/subnets/AUDIT_PROD_PRIVATE_ENDPOINT_Subnet"
+  ${{ if in(parameters.geo, 'apa') }}:
+    deloitteInternalSubnetId: "/subscriptions/b2fcc9cc-5757-42d3-980c-d92d66bab682/resourceGroups/AZRG-JPW-AUD-ITS-PRD/providers/Microsoft.Network/virtualNetworks/AZAPAJPWAUDPRDVNT01/subnets/AUDIT_BCP_PRIVATE_ENDPOINT_Subnet"
+  ${{ if in(parameters.geo, 'ema') }}:
+    deloitteInternalSubnetId: "/subscriptions/62c1dd5c-d918-4a4d-b0ee-18d5e7d5071b/resourceGroups/AZRG-EUN-AUD-ITS-PRD/providers/Microsoft.Network/virtualNetworks/azeunprdvnt01/subnets/AUDIT_PRODBCP_PRIVATE_ENDPOINT_Subnet"

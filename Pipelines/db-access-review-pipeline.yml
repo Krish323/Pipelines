@@ -1,0 +1,47 @@
+trigger: none
+
+name: $(Date:yyyyMMdd)$(Rev:.r)
+
+resources:
+  repositories:
+    - repository: DevOpsTools
+      type: git
+      name: 'Audit DevOps/DevOpsTools'
+      branch: develop
+
+stages:
+  - stage: EMA_PROD
+    dependsOn: []
+    jobs:
+      - template: build-templates/db-access-review-build-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-EUW-PROD-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_EMA_AUDIT_PROD
+          geo: ema
+          environment: prod
+          lifecycle: prod
+          repositoryName: DevOpsTools
+
+  - stage: AME_PROD
+    dependsOn: []
+    jobs:
+      - template: build-templates/db-access-review-build-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-USE2-PROD-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_US_AUDIT_PROD
+          geo: ame
+          environment: prod
+          lifecycle: prod
+          repositoryName: DevOpsTools
+
+  - stage: APA_PROD
+    dependsOn: []
+    jobs:
+      - template: build-templates/db-access-review-build-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-JPE-PROD-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_APA_AUDIT_PROD
+          geo: apa
+          environment: prod
+          lifecycle: prod
+          repositoryName: DevOpsTools

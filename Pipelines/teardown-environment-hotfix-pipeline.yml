@@ -1,0 +1,28 @@
+trigger: none
+
+parameters:
+  - name: deploymentChannel
+    displayName: Deployment Channel
+    type: string
+    default: Feature Testing
+    values:
+      - Feature Testing
+      - Hotfix Testing
+
+name: $(Date:yyyyMMdd)$(Rev:.r)
+
+variables:
+  environmentIndex: "h"
+
+stages:
+  - stage: BUILD
+    jobs:
+      - template: build-templates/infrastructure-build-jobs-template.yml
+
+  - ${{ if eq(parameters.deploymentChannel, 'Feature Testing') }}:
+      - template: stage-templates/teardown-environment-feature-stage-template.yml
+        parameters:
+          environmentIndex: ${{ variables.environmentIndex }}
+          
+  - ${{ if eq(parameters.deploymentChannel, 'Hotfix Testing') }}:
+      - template: stage-templates/teardown-environment-hotfix-stage-template.yml

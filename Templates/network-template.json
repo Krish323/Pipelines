@@ -1,0 +1,305 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "appName": {
+            "type": "string",
+            "metadata": {
+                "description": "Application name used in resource names."
+            }
+        },
+        "locationCode": {
+            "type": "string",
+            "metadata": {
+                "description": "Geographical location where resources reside."
+            },
+            "allowedValues": [
+                "eun",
+                "euw",
+                "jpe",
+                "jpw",
+                "usc",
+                "use2"
+            ]
+        },
+        "environment": {
+            "type": "string",
+            "metadata": {
+                "description": "Environment resources are being deployed for (e.g. dev, qa, etc.)"
+            },
+            "allowedValues": [
+                "bcp",
+                "dev",
+                "int",
+                "load",
+                "npd",
+                "poc",
+                "prod",
+                "qa",
+                "sbx",
+                "stage",
+                "sys",
+                "test",
+                "uat",
+                "val"
+            ]
+        },
+        "environmentIndex": {
+            "type": "string",
+            "metadata": {
+                "description": "Alphanumeric index that will be added to Environment Alias."
+            },
+            "defaultValue": ""
+        },
+        "privateEndpoints": {
+            "type": "array",
+            "defaultValue": [],
+            "metadata": {
+                "description": "An array of JSON Objects defining each Private Endpoint to deploy."
+            }
+        },
+         "appGatewayVnetIpAddress": {
+            "type": "string",
+            "metadata": {
+                "description": "Application gateway vnet ip address for allowing inbound traffic in the subnets-"
+            }
+        },
+        "releaseServersVnetIpAddress": {
+            "type": "string",
+            "metadata": {
+                "description": "Release servers vnet ip address for allowing inbound traffic in the subnets-"
+            }
+        }
+        
+    },
+    "variables": {
+        "appServiceSubnetName": "[toLower(concat('sbnappservice', parameters('locationCode')))]",
+        "privateLinkSubnetName": "[toLower(concat('sbnprivatelink', parameters('locationCode')))]",
+        "appVnetName": "[toLower(concat(variables('rootName'), 'vnt', parameters('locationCode')))]",
+        "rootName": "[toLower(concat(first(parameters('Environment')), parameters('environmentIndex'), parameters('appName')))]",
+        "appServiceSubnetNsgName": "[toLower(concat(variables('rootName'), 'nsgappservice', parameters('locationCode')))]",
+        "privateLinkSubnetNsgName": "[toLower(concat(variables('rootName'), 'nsgprivatelink', parameters('locationCode')))]",
+        "copy": [
+            {
+                "name": "privateEndpoints",
+                "count": "[length(parameters('privateEndpoints'))]",
+                "input": {
+                    "name": "[tolower(concat(variables('rootName'), 'pe', parameters('privateEndpoints')[copyIndex('privateEndpoints')].name, parameters('locationCode')))]",
+                    "privateLinkServiceId": "[parameters('privateEndpoints')[copyIndex('privateEndpoints')].privateLinkServiceId]",
+                    "privateIPAddress": "[parameters('privateEndpoints')[copyIndex('privateEndpoints')].privateIPAddress]"
+                }
+            }
+        ]
+    },
+    "resources": [
+         {
+            "apiVersion": "2021-08-01",
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "name": "[variables('appServiceSubnetNsgName')]",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "Allow_App_GW_Inbound",
+                        "properties": {
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "443",
+                            "sourceAddressPrefix": "[parameters('appGatewayVnetIpAddress')]",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 100,
+                            "direction": "Inbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []    
+                        }
+                    },
+                    {
+                        "name": "Allow_Release_Servers_Inbound",
+                        "properties": {
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "443",
+                            "sourceAddressPrefix": "[parameters('releaseServersVnetIpAddress')]",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 110,
+                            "direction": "Inbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    },
+                     {
+                        "name": "Deny_Vnet_Inbound",
+                        "properties": {
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "*",
+                            "sourceAddressPrefix": "VirtualNetwork",
+                            "destinationAddressPrefix": "VirtualNetwork",
+                            "access": "Deny",
+                            "priority": 140,
+                            "direction": "Inbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    },
+                    {
+                        "name": "Allow_HTTPS_Outbound",
+                        "properties": {
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "443",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 130,
+                            "direction": "Outbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    }
+                ]
+            }
+        },
+          {
+            "apiVersion": "2021-08-01",
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "name": "[variables('privateLinkSubnetNsgName')]",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "securityRules": []
+            }
+        },
+        {
+            "apiVersion": "2020-08-01",
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "[variables('appVnetName')]",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "172.16.0.0/16"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "[variables('appServiceSubnetName')]",
+                        "properties": {
+                            "addressPrefix": "172.16.0.0/24",
+                            "serviceEndpoints": [
+                                { "service": "Microsoft.Sql" },
+                                { "service": "Microsoft.AzureCosmosDB" },
+                                { "service": "Microsoft.Storage" },
+                                { "service": "Microsoft.KeyVault" },
+                                { "service": "Microsoft.ServiceBus" },
+                                { "service": "Microsoft.ContainerRegistry" },
+                                { "service": "Microsoft.EventHub" },
+                                { "service": "Microsoft.Web" }
+                            ],
+                            "delegations": [
+                                {
+                                    "name": "webapp",
+                                    "properties": {
+                                        "serviceName": "Microsoft.Web/serverFarms",
+                                        "actions": [
+                                            "Microsoft.Network/virtualNetworks/subnets/action"
+                                        ]
+                                    }
+                                }
+                            ],
+                            "networkSecurityGroup": {
+                                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('appServiceSubnetNsgName'))]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "[variables('privateLinkSubnetName')]",
+                        "properties": {
+                            "addressPrefix": "172.16.1.0/24",
+                            "privateEndpointNetworkPolicies": "Disabled",
+                            "networkSecurityGroup": {
+                                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('privateLinkSubnetNsgName'))]"
+                            }
+                        }
+                    }
+
+                ]
+            },
+             "dependsOn": [
+                "[concat('Microsoft.Network/networkSecurityGroups/', variables('appServiceSubnetNsgName'))]",
+                "[concat('Microsoft.Network/networkSecurityGroups/', variables('privateLinkSubnetNsgName'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Network/privateEndpoints",
+            "apiVersion": "2021-03-01",
+            "copy": {
+                "name": "privateEndpoints",
+                "count": "[length(variables('privateEndpoints'))]",
+                "mode": "Serial"
+            },
+            "condition": "[greater(length(parameters('privateEndpoints')), 0)]",
+            "name": "[variables('privateEndpoints')[copyIndex()].name]",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "subnet": {
+                    "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('appVnetName'), variables('privateLinkSubnetName'))]"
+                },
+                "privateLinkServiceConnections": [
+                    {
+                        "name": "[variables('privateEndpoints')[copyIndex()].name]",
+                        "properties": {
+                            "privateLinkServiceId": "[variables('privateEndpoints')[copyIndex()].privateLinkServiceId]"
+                        }
+                    }
+                ],
+                "ipConfigurations": [
+                    {
+                      "name": "[variables('privateEndpoints')[copyIndex()].name]",
+                      "properties": {
+                        "privateIPAddress": "[variables('privateEndpoints')[copyIndex()].privateIPAddress]"
+                      }
+                    }
+                ]
+            },
+            "dependsOn": [
+                "[variables('appVnetName')]"
+            ]
+        },
+        {
+            "type": "Microsoft.Network/privateDnsZones",
+            "apiVersion": "2018-09-01",
+            "name": "privatelink.service.signalr.net",
+            "location": "global",
+            "properties": {},
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('appVnetName'))]"
+            ] 
+        },
+        {
+            "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+            "apiVersion": "2018-09-01",
+            "name": "[concat('privatelink.service.signalr.net', '/', 'privatelink.service.signalr.net', '-link')]",
+            "location": "global",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/privateDnsZones', 'privatelink.service.signalr.net')]",
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('appVnetName'))]"
+            ],
+            "properties": {
+                "registrationEnabled": false,
+                "virtualNetwork": {
+                    "id": "[resourceId('Microsoft.Network/virtualNetworks', variables('appVnetName'))]"
+                }
+            }
+        }
+    ]
+}

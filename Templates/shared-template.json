@@ -1,0 +1,598 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "appName": {
+            "type": "string",
+            "metadata": {
+                "description": "Application name used in resource names."
+            }
+        },
+        "environment": {
+            "type": "string",
+            "metadata": {
+                "description": "Environment resources are being deployed for (e.g. dev, qa, etc.)"
+            },
+            "allowedValues": [
+                "bcp",
+                "dev",
+                "int",
+                "load",
+                "npd",
+                "poc",
+                "prod",
+                "qa",
+                "sbx",
+                "stage",
+                "sys",
+                "test",
+                "uat",
+                "val"
+            ]
+        },
+        "environmentIndex": {
+            "type": "string",
+            "metadata": {
+                "description": "Alphanumeric index that will be added to Environment Alias."
+            },
+            "defaultValue": ""
+        },
+        "locationCode": {
+            "type": "string",
+            "metadata": {
+                "description": "Geographical location where resources reside."
+            },
+            "allowedValues": [
+                "eun",
+                "euw",
+                "jpe",
+                "jpw",
+                "usc",
+                "use2"
+            ]
+        },
+        "primaryEnvironment": {
+            "type": "string",
+            "metadata": {
+                "description": "Primary environment name for prd stages"
+            },
+            "allowedValues": [
+                "bcp",
+                "dev",
+                "int",
+                "load",
+                "npd",
+                "poc",
+                "prod",
+                "qa",
+                "sbx",
+                "stage",
+                "sys",
+                "test",
+                "uat",
+                "val"
+            ],
+            "defaultValue": "[parameters('environment')]"
+        },
+        "primaryLocationCode": {
+            "type": "string",
+            "metadata": {
+                "description": "Primary environment location code for prd stages"
+            },
+            "allowedValues": [
+                "eun",
+                "euw",
+                "jpe",
+                "jpw",
+                "usc",
+                "use2"
+            ],
+            "defaultValue": "[parameters('locationCode')]"
+        },
+        "spnName": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of Service Principal used by agent pool for deployments"
+            }
+        },
+        "spnObjectId": {
+            "type": "string",
+            "metadata": {
+                "description": "Object ID of Service Principal used by agent pool for deployments"
+            }
+        },
+        "storageAccountSku": {
+            "type": "string",
+            "metadata": {
+                "description": "Storage Account type"
+            },
+            "allowedValues": [
+                "Standard_LRS",
+                "Standard_GRS",
+                "Standard_RAGRS"
+            ],
+            "defaultValue": "Standard_LRS"
+        },
+        "storageAccountAccessTier": {
+            "type": "string",
+            "metadata": {
+                "description": "Storage Account AccessTier"
+            },
+            "allowedValues": [
+                "Hot",
+                "Cool"
+            ],
+            "defaultValue": "Hot"
+        },
+        "storageAccountKind": {
+            "type": "string",
+            "metadata": {
+                "description": "Storage Account kind"
+            },
+            "allowedValues": [
+                "Storage",
+                "StorageV2"
+            ],
+            "defaultValue": "StorageV2"
+        },
+        "containerBlobNames": {
+            "type": "array",
+            "metadata": {
+                "description": "List of Container Blob Names"
+            },
+            "defaultValue": []
+        },
+        "vnetFirewallRules": {
+            "type": "array",
+            "metadata": {
+                "description": "Object array, containing Resource Group, VNet, & Subnet Name, that should be granted access to resources with firewalls"
+            },
+            "defaultValue": []
+        },
+        "nonProdIpFirewallRules": {
+            "type": "array",
+            "metadata": {
+                "description": "Object array, containing name, cidr, startIpAddress, endIpAddress, that should be granted access to non-prod resources with firewalls"
+            },
+            "defaultValue": []
+        },
+        "kvAccessPolicies": {
+            "type": "array",
+            "metadata": {
+                "description": "Object array, containing the access policies for the application keyvault."
+            },
+            "defaultValue": [
+                {
+                    "objectId": "3e2ab639-b911-4cab-8c2b-7792fbaea44d",
+                    "comments": "Microsoft Azure App Service",
+                    "secretsPermissions": [
+                        "all"
+                    ],
+                    "keysPermissions": [
+                    ],
+                    "certificatesPermissions": [
+                    ]
+                }
+            ]
+        }
+    },
+    "variables": {
+        "appServiceSubnetName": "[toLower(concat('sbnappservice', parameters('locationCode')))]",
+        "appServiceVnetName": "[toLower(concat(variables('rootName'), 'vnt', parameters('locationCode')))]",
+        "appServiceVnetObject": {
+            "resourceGroupName": "[resourceGroup().name]",
+            "vnetName": "[variables('appServiceVnetName')]",
+            "subnetName": "[variables('appServiceSubnetName')]"
+        },
+        "isBcpEnvironment": "[or(startsWith(parameters('Environment'), 'BCP'), startsWith(parameters('Environment'), 'TEST'))]",
+        "isNonProdEnvironment": "[not(or(startsWith(parameters('environment'), 'STAGE'), startsWith(parameters('environment'), 'PROD'), startsWith(parameters('environment'), 'BCP'), startsWith(parameters('environment'), 'INT'), startsWith(parameters('environment'), 'TEST')))]",
+        "keyVaultName": "[toLower(concat(variables('rootName'),'kv',parameters('locationCode')))]",
+        "msiName": "[toLower(concat(variables('primaryEnvironmentRootName'), 'msi', parameters('primaryLocationCode')))]",
+        "msiResourceId": "[resourceId(variables('primaryResourceGroupName'), 'Microsoft.ManagedIdentity/userAssignedIdentities', variables('msiName'))]",
+        "omsWorkspaceId": "/subscriptions/8c71ef53-4473-4862-af36-bae6e40451b2/resourcegroups/audit_prod_rg_aaps_sec_oms/providers/microsoft.operationalinsights/workspaces/aaps-sec-oms",
+        "primaryEnvironmentRootName": "[toLower(concat(first(parameters('primaryEnvironment')), parameters('environmentIndex'), parameters('appName')))]",
+        "primaryResourceGroupName": "[toLower(concat('azrg-', parameters('primaryLocationCode'), '-aud-', parameters('appName'), '-', parameters('primaryEnvironment'), parameters('environmentIndex')))]",
+        "rootName": "[toLower(concat(first(parameters('Environment')), parameters('environmentIndex'), parameters('appName')))]",
+        "storageAccountName": "[toLower(concat(variables('rootName'), 'stoapp', parameters('locationCode')))]",
+        "vnetFirewallRules": "[union(parameters('vnetFirewallRules'), array(variables('appServiceVnetObject')))]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+            "name": "[variables('msiName')]",
+            "condition": "[not(variables('isBcpEnvironment'))]",
+            "apiVersion": "2018-11-30",
+            "location": "[resourceGroup().location]"
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults",
+            "name": "[variables('keyVaultName')]",
+            "apiVersion": "2018-02-14",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "tenantId": "[subscription().tenantid]",
+                "sku": {
+                    "name": "Premium",
+                    "family": "A"
+                },
+                "enabledForDeployment": true,
+                "enabledForDiskEncryption": true,
+                "enabledForTemplateDeployment": true,
+                "enableSoftDelete": true,
+                "enablePurgeProtection": true,
+                "accessPolicies": [
+                    {
+                        "tenantId": "[subscription().tenantid]",
+                        "comments": "[parameters('spnName')]",
+                        "objectId": "[parameters('spnObjectId')]",
+                        "permissions": {
+                            "keys": [
+                                "all"
+                            ],
+                            "secrets": [
+                                "all"
+                            ]
+                        }
+                    },
+                    {
+                        "tenantId": "[subscription().tenantid]",
+                        "comments": "[variables('msiName')]",
+                        "objectId": "[reference(variables('msiResourceId'), '2021-09-30-PREVIEW').principalId]",
+                        "permissions": {
+                            "secrets": [
+                                "get",
+                                "list"
+                            ]
+                        }
+                    }
+                ],
+                "networkAcls": {
+                    "bypass": "AzureServices",
+                    "defaultAction": "Deny",
+                    "copy": [
+                        {
+                            "name": "ipRules",
+                            "count": "[if(variables('isNonProdEnvironment'), length(parameters('nonProdIpFirewallRules')), 0)]",
+                            "input": {
+                                "value": "[parameters('nonProdIpFirewallRules')[copyIndex('ipRules')].cidr]"
+                            }
+                        },
+                        {
+                            "name": "virtualNetworkRules",
+                            "count": "[length(variables('vnetFirewallRules'))]",
+                            "input": {
+                                "id": "[resourceId(variables('vnetFirewallRules')[copyIndex('virtualNetworkRules')].resourceGroupName, 'Microsoft.Network/virtualNetworks/subnets', variables('vnetFirewallRules')[copyIndex('virtualNetworkRules')].vnetName, variables('vnetFirewallRules')[copyIndex('virtualNetworkRules')].subnetName)]"
+                            }
+                        }
+                    ]
+                }
+            },
+            "resources": [
+                {
+                    "name": "Microsoft.Authorization/CannotDelete",
+                    "type": "providers/locks",
+                    "apiVersion": "2017-04-01",
+                    "properties": {
+                        "level": "CannotDelete"
+                    },
+                    "dependsOn": [
+                        "[variables('keyVaultName')]"
+                    ]
+                },
+                {
+                    "name": "Microsoft.Insights/service",
+                    "type": "providers/diagnosticSettings",
+                    "apiVersion": "2021-05-01-preview",
+                    "properties": {
+                        "workspaceId": "[variables('omsWorkspaceId')]",
+                        "logs": [
+                            {
+                                "category": "AuditEvent",
+                                "enabled": true
+                            }
+                        ],
+                        "metrics": [
+                            {
+                                "timeGrain": "PT1M",
+                                "enabled": true
+                            }
+                        ]
+                    },
+                    "dependsOn": [
+                        "[variables('keyVaultName')]"
+                    ]
+                }
+            ],
+            "dependsOn": [
+                "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('msiName'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/accessPolicies",
+            "name": "[concat(variables('keyVaultName'), '/add')]",
+            "apiVersion": "2019-09-01",
+            "properties": {
+                "copy": [
+                    {
+                        "name": "accessPolicies",
+                        "count": "[length(parameters('kvAccessPolicies'))]",
+                        "input": {
+                            "tenantId": "[subscription().tenantid]",
+                            "objectId": "[parameters('kvAccessPolicies')[copyIndex('accessPolicies')].objectId]",
+                            "comments": "[parameters('kvAccessPolicies')[copyIndex('accessPolicies')].comments]",
+                            "permissions": {
+                                "keys": "[parameters('kvAccessPolicies')[copyIndex('accessPolicies')].keysPermissions]",
+                                "secrets": "[parameters('kvAccessPolicies')[copyIndex('accessPolicies')].secretsPermissions]",
+                                "certificates": "[parameters('kvAccessPolicies')[copyIndex('accessPolicies')].certificatesPermissions]"
+                            }
+                        }
+                    }
+                ]
+            },
+            "dependsOn": [
+                "[variables('keyVaultName')]"
+            ]
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "name": "[variables('storageAccountName')]",
+            "apiVersion": "2021-08-01",
+            "kind": "[parameters('storageAccountKind')]",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "[parameters('storageAccountSku')]"
+            },
+            "properties": {
+                "name": "[variables('storageAccountName')]",
+                "accessTier": "[parameters('storageAccountAccessTier')]",
+                "allowBlobPublicAccess": false,
+                "allowCrossTenantReplication": false,
+                "encryption": {
+                    "keySource": "Microsoft.Storage",
+                    "services": {
+                        "blob": {
+                            "enabled": true
+                        }
+                    }
+                },
+                "minimumTlsVersion": "TLS1_2",
+                "networkAcls": {
+                    "bypass": "AzureServices",
+                    "defaultAction": "Deny",
+                    "copy": [
+                        {
+                            "name": "ipRules",
+                            "count": "[if(variables('isNonProdEnvironment'), length(parameters('nonProdIpFirewallRules')), 0)]",
+                            "input": {
+                                "value": "[if(endswith(parameters('nonProdIpFirewallRules')[copyIndex('ipRules')].cidr, '/32'), parameters('nonProdIpFirewallRules')[copyIndex('ipRules')].startIpAddress, parameters('nonProdIpFirewallRules')[copyIndex('ipRules')].cidr)]"
+                            }
+                        },
+                        {
+                            "name": "virtualNetworkRules",
+                            "count": "[length(variables('vnetFirewallRules'))]",
+                            "input": {
+                                "id": "[resourceId(variables('vnetFirewallRules')[copyIndex('virtualNetworkRules')].resourceGroupName, 'Microsoft.Network/virtualNetworks/subnets', variables('vnetFirewallRules')[copyIndex('virtualNetworkRules')].vnetName, variables('vnetFirewallRules')[copyIndex('virtualNetworkRules')].subnetName)]"
+                            }
+                        }
+                    ]
+                },
+                "supportsHttpsTrafficOnly": true
+            },
+            "resources": [
+                {
+                    "name": "default/Engagements",
+                    "type": "tableServices/tables",
+                    "apiVersion": "2021-08-01",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+                    ]
+                },
+                {
+                    "type": "providers/locks",
+                    "name": "Microsoft.Authorization/CannotDelete",
+                    "apiVersion": "2017-04-01",
+                    "properties": {
+                        "level": "CannotDelete"
+                    },
+                    "dependsOn": [
+                        "[variables('storageAccountName')]"
+                    ]
+                },
+                {
+                    "type": "providers/diagnosticsettings",
+                    "name": "/Microsoft.Insights/service",
+                    "apiVersion": "2021-05-01-preview",
+                    "properties": {
+                        "workspaceId": "[variables('omsWorkspaceId')]",
+                        "metrics": [
+                            {
+                                "category": "Transaction",
+                                "enabled": true
+                            }
+                        ]
+                    },
+                    "dependsOn": [
+                        "[variables('storageAccountName')]"
+                    ]
+                },
+                {
+                    "type": "blobServices/providers/diagnosticsettings",
+                    "name": "/default/Microsoft.Insights/service",
+                    "apiVersion": "2021-05-01-preview",
+                    "properties": {
+                        "workspaceId": "[variables('omsWorkspaceId')]",
+                        "logs": [
+                            {
+                                "category": "StorageRead",
+                                "enabled": true
+                            },
+                            {
+                                "category": "StorageWrite",
+                                "enabled": true
+                            },
+                            {
+                                "category": "StorageDelete",
+                                "enabled": true
+                            }
+                        ],
+                        "metrics": [
+                            {
+                                "category": "Transaction",
+                                "enabled": true
+                            }
+                        ]
+                    },
+                    "dependsOn": [
+                        "[variables('storageAccountName')]"
+                    ]
+                },
+                {
+                    "type": "tableServices/providers/diagnosticsettings",
+                    "name": "default/Microsoft.Insights/service",
+                    "apiVersion": "2021-05-01-preview",
+                    "properties": {
+                        "workspaceId": "[variables('omsWorkspaceId')]",
+                        "logs": [
+                            {
+                                "category": "StorageRead",
+                                "enabled": true
+                            },
+                            {
+                                "category": "StorageWrite",
+                                "enabled": true
+                            },
+                            {
+                                "category": "StorageDelete",
+                                "enabled": true
+                            }
+                        ],
+                        "metrics": [
+                            {
+                                "category": "Transaction",
+                                "enabled": true
+                            }
+                        ]
+                    },
+                    "dependsOn": [
+                        "[variables('storageAccountName')]"
+                    ]
+                },
+                {
+                    "type": "fileServices/providers/diagnosticsettings",
+                    "name": "default/Microsoft.Insights/service",
+                    "apiVersion": "2021-05-01-preview",
+                    "properties": {
+                        "workspaceId": "[variables('omsWorkspaceId')]",
+                        "logs": [
+                            {
+                                "category": "StorageRead",
+                                "enabled": true
+                            },
+                            {
+                                "category": "StorageWrite",
+                                "enabled": true
+                            },
+                            {
+                                "category": "StorageDelete",
+                                "enabled": true
+                            }
+                        ],
+                        "metrics": [
+                            {
+                                "category": "Transaction",
+                                "enabled": true
+                            }
+                        ]
+                    },
+                    "dependsOn": [
+                        "[variables('storageAccountName')]"
+                    ]
+                },
+                {
+                    "type": "queueServices/providers/diagnosticsettings",
+                    "name": "default/Microsoft.Insights/service",
+                    "apiVersion": "2021-05-01-preview",
+                    "properties": {
+                        "workspaceId": "[variables('omsWorkspaceId')]",
+                        "logs": [
+                            {
+                                "category": "StorageRead",
+                                "enabled": true
+                            },
+                            {
+                                "category": "StorageWrite",
+                                "enabled": true
+                            },
+                            {
+                                "category": "StorageDelete",
+                                "enabled": true
+                            }
+                        ],
+                        "metrics": [
+                            {
+                                "category": "Transaction",
+                                "enabled": true
+                            }
+                        ]
+                    },
+                    "dependsOn": [
+                        "[variables('storageAccountName')]"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+            "name": "[concat(variables('storageAccountName'), '/default/', tolower(parameters('containerBlobNames')[copyIndex()]))]",
+            "apiVersion": "2019-06-01",
+            "copy": {
+                "name": "BlobContainerInstanceCopy",
+                "count": "[length(parameters('containerBlobNames'))]"
+            },
+            "properties": {
+                "publicAccess": "None"
+            },
+            "dependsOn": [
+                "[variables('storageAccountName')]"
+            ]
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/managementPolicies",
+            "apiVersion": "2022-05-01",
+            "name": "[concat(variables('storageAccountName'), '/default')]",
+            "properties": {
+                "policy": {
+                    "rules": [
+                        {
+                            "name": "NavigatorFileScan",
+                            "enabled": true,
+                            "type": "Lifecycle",
+                            "definition": {
+                                "filters": {
+                                    "blobTypes": [ "blockBlob" ],
+                                    "prefixMatch": [ "/navigator-file-scan" ]
+                                },
+                                "actions": {
+                                    "baseBlob": {
+                                        "delete": {
+                                            "daysAfterCreationGreaterThan": 1
+                                        }
+                                    },
+                                    "snapshot": {
+                                        "delete": {
+                                            "daysAfterCreationGreaterThan": 1
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                }
+            },
+            "dependsOn": [
+                "[variables('storageAccountName')]",
+                "BlobContainerInstanceCopy"
+            ]
+        }
+    ]
+}

@@ -1,0 +1,42 @@
+stages:
+  - stage: AME_LOAD
+    dependsOn: BUILD
+    jobs:
+      - deployment: AME_LOAD
+        environment: INFRASTRUCTURE_TEAM_LEAD
+        pool: ASSURANCE-USE2-NPD-AKS-WIN-RELEASE
+      - template: ../deployment-templates/dim-environment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-USE2-NPD-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_US_AUDIT_PREPROD
+          geo: ame
+          lifecycle: npd
+          environment: load
+
+  - stage: EMA_LOAD
+    dependsOn: BUILD
+    jobs:
+      - deployment: EMA_LOAD
+        environment: INFRASTRUCTURE_TEAM_LEAD
+        pool: ASSURANCE-EUW-NPD-AKS-WIN-RELEASE
+      - template: ../deployment-templates/dim-environment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-EUW-NPD-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_EMA_AUDIT_PREPROD
+          geo: ema
+          lifecycle: npd
+          environment: load
+
+  - stage: APA_LOAD
+    dependsOn: BUILD
+    jobs:
+      - deployment: APA_LOAD
+        environment: INFRASTRUCTURE_TEAM_LEAD
+        pool: ASSURANCE-JPE-NPD-AKS-WIN-RELEASE
+      - template: ../deployment-templates/dim-environment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-JPE-NPD-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_APA_AUDIT_PREPROD
+          geo: apa
+          lifecycle: npd
+          environment: load

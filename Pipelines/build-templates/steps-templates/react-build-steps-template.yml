@@ -1,0 +1,51 @@
+parameters:
+  repositoryName: ""
+  projectName: ""
+  artifactName: ""
+  buildOutputFolder: "build"
+  nodeVersion: "14.x"
+
+steps:
+  - checkout: ${{ parameters.repositoryName }}
+    clean: true
+
+  - task: NodeTool@0
+    displayName: 'Use Node ${{ parameters.nodeVersion }}'
+    inputs:
+      checkLatest: true
+      versionSpec: '${{ parameters.nodeVersion }}'
+
+  - task: Npm@1
+    displayName: npm install
+    inputs:
+      command: install
+      verbose: false
+      workingDir: '${{ parameters.projectName }}'
+
+  - task: Npm@1
+    displayName: 'npm run build'
+    inputs:
+      command: custom
+      customCommand: 'run build'
+      verbose: false
+      workingDir: '${{ parameters.projectName }}'
+  
+  - task: CopyFiles@2
+    displayName: 'Copy Web.Config file to build output folder'
+    inputs:
+      SourceFolder: Deloitte.Assurance.CER.UI
+      Contents: Web.config
+      TargetFolder: 'Deloitte.Assurance.CER.UI\build'
+
+  - task: ArchiveFiles@2
+    displayName: 'Archive Package'
+    inputs:
+      archiveFile: '$(Build.StagingDirectory)/${{ parameters.projectName }}.zip'
+      includeRootFolder: false
+      rootFolderOrFile: '${{ parameters.projectName }}/${{ parameters.buildOutputFolder }}'
+
+  - task: PublishPipelineArtifact@1
+    displayName: 'Publish Artifact'
+    inputs:
+      artifactName: ${{ parameters.artifactName }}
+      targetPath: $(Build.StagingDirectory)

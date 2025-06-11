@@ -1,0 +1,36 @@
+parameters:
+  primaryGeoPool: null
+  primaryGeoAzureSubscription: ""
+  primaryGeo: ""
+  destinationGeoPool: null
+  destinationGeoAzureSubscription: ""
+  destinationGeo: ""
+  isDestinationGeoPrimaryGeo: false
+  lifecycle: ""
+  environment: ""
+  applicationRepo: ""
+  infrastructureRepo: ""
+
+jobs:
+  - job: CopyData
+    pool: ${{ parameters.destinationGeoPool }}
+    variables:
+      - group: ase-less-infrastructure-${{ parameters.lifecycle }}-v2
+      - template: ../variables-templates/${{ parameters.environment}}-variables-template.yml
+      - template: ../variables-templates/${{ parameters.lifecycle }}-${{ parameters.destinationGeo}}-variables-template.yml
+      - template: ../variables-templates/${{ parameters.destinationGeo}}-variables-template.yml
+      - template: ../variables-templates/release-variables-template.yml
+        parameters:
+          environment: ${{ parameters.environment }}
+          isPrimaryGeo: ${{ parameters.isDestinationGeoPrimaryGeo }}
+    steps:
+      - template: steps-templates/master-data-migration-create-user-steps-template.yml
+        parameters:
+          azureSubscription: ${{ parameters.destinationGeoAzureSubscription }}
+          infrastructureRepo: ${{ parameters.infrastructureRepo }}
+
+      - template: steps-templates/master-data-migration-copy-data-steps-template.yml
+        parameters:
+          azureSubscription: ${{ parameters.destinationGeoAzureSubscription }}
+          applicationRepo: ${{ parameters.applicationRepo }}
+          infrastructureRepo: ${{ parameters.infrastructureRepo }}

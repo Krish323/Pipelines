@@ -1,0 +1,34 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "appName": {
+        "value": "navigator"
+      },
+      "locationCode": {
+        "value": "use2"
+      },
+      "environment": {
+        "value": "dev"
+      },
+      "deployGlobalTrafficManager": {
+            "value": false
+        },
+        "deployGeoTrafficManager": {
+            "value": true
+        },
+        "geoTrafficRoutingMethod": {
+            "value": "Priority"
+        },
+        "geoTrafficManagerEndpoints": {
+            "value": [
+                {
+                    "name": "primarylocation",
+                    "endpointStatus": "Enabled",
+                    "target": "audit-shared-use2-pip-npd.eastus2.cloudapp.azure.com",
+                    "priority": 1
+                }
+            ]
+        }
+    }
+  }

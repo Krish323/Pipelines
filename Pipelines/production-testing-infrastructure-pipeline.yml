@@ -1,0 +1,217 @@
+trigger: none
+
+name: $(Date:yyyyMMdd)$(Rev:.r)
+
+parameters:
+  - name: isAmeBcpPrimaryEnvironment
+    displayName: AME BCP is Primary Environment
+    type: boolean
+    default: false
+  - name: isApaBcpPrimaryEnvironment
+    displayName: APA BCP is Primary Environment
+    type: boolean
+    default: false
+  - name: isEmaBcpPrimaryEnvironment
+    displayName: EMA BCP is Primary Environment
+    type: boolean
+    default: false
+
+stages:
+  - stage: BUILD
+    jobs:
+      - template: build-templates/infrastructure-build-jobs-template.yml
+        parameters:
+          scriptCopyOnly: false
+          validateTemplates: true
+
+  - stage: DEPLOY_AME_INT
+    dependsOn: BUILD
+    jobs:
+      - deployment: DEPLOY_AME_INT
+        environment: INFRASTRUCTURE_PROD_TEST
+        pool: ASSURANCE-USE2-PROD-AKS-WIN-RELEASE
+      - template: deployment-templates/infrastructure-deployment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-USE2-PROD-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_US_AUDIT_PROD
+          geo: ame
+          lifecycle: prod
+          environment: int
+          isPrimaryLocation: not(${{ parameters.isAmeBcpPrimaryEnvironment }})
+
+  - stage: DEPLOY_AME_TEST
+    dependsOn: DEPLOY_AME_INT
+    jobs:
+      - deployment: DEPLOY_AME_TEST
+        environment: INFRASTRUCTURE_PROD_TEST
+        pool: ASSURANCE-USC-BCP-AKS-WIN-RELEASE
+      - template: deployment-templates/infrastructure-deployment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-USC-BCP-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_US_AUDIT_PROD
+          geo: ame
+          lifecycle: bcp
+          environment: test
+          isPrimaryLocation: ${{ parameters.isAmeBcpPrimaryEnvironment }}
+
+  - stage: TEARDOWN_AME_INT
+    dependsOn: DEPLOY_AME_TEST
+    jobs:
+      - deployment: TEARDOWN_AME_INT
+        environment: INFRASTRUCTURE_PROD_TEST
+        pool: ASSURANCE-USE2-PROD-AKS-WIN-RELEASE
+      - template: deployment-templates/teardown-environment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-USE2-PROD-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_US_AUDIT_PROD
+          geo: ame
+          lifecycle: prod
+          environment: int
+          teardownResourceGroup: true
+
+  - stage: TEARDOWN_AME_TEST
+    dependsOn: TEARDOWN_AME_INT
+    jobs:
+      - deployment: TEARDOWN_AME_TEST
+        environment: INFRASTRUCTURE_PROD_TEST
+        pool: ASSURANCE-USC-BCP-AKS-WIN-RELEASE
+      - template: deployment-templates/teardown-environment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-USC-BCP-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_US_AUDIT_PROD
+          geo: ame
+          lifecycle: bcp
+          environment: test
+          teardownResourceGroup: true
+
+  - stage: DEPLOY_EMA_INT
+    dependsOn: BUILD
+    jobs:
+      - deployment: DEPLOY_EMA_INT
+        environment: INFRASTRUCTURE_PROD_TEST
+        pool: ASSURANCE-EUW-PROD-AKS-WIN-RELEASE
+      - template: deployment-templates/infrastructure-deployment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-EUW-PROD-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_EMA_AUDIT_PROD
+          geo: ema
+          lifecycle: prod
+          environment: int
+          isPrimaryGeo: true
+          isPrimaryLocation: not(${{ parameters.isEmaBcpPrimaryEnvironment }})
+          azureSubscriptionSqlReplica: AzureRM_EMA_AUDIT_PROD
+          sqlReplicas:
+            - use2
+            - jpe
+
+  - stage: DEPLOY_EMA_TEST
+    dependsOn: DEPLOY_EMA_INT
+    jobs:
+      - deployment: DEPLOY_EMA_TEST
+        environment: INFRASTRUCTURE_PROD_TEST
+        pool: ASSURANCE-EUN-BCP-AKS-WIN-RELEASE
+      - template: deployment-templates/infrastructure-deployment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-EUN-BCP-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_EMA_AUDIT_PROD
+          geo: ema
+          lifecycle: bcp
+          environment: test
+          isPrimaryGeo: true
+          isPrimaryLocation: ${{ parameters.isEmaBcpPrimaryEnvironment }}
+          azureSubscriptionSqlReplica: AzureRM_EMA_AUDIT_PROD
+          sqlReplicas:
+            - usc
+            - jpw
+
+  - stage: TEARDOWN_EMA_INT
+    dependsOn: DEPLOY_EMA_TEST
+    jobs:
+      - deployment: TEARDOWN_EMA_INT
+        environment: INFRASTRUCTURE_PROD_TEST
+        pool: ASSURANCE-EUW-PROD-AKS-WIN-RELEASE
+      - template: deployment-templates/teardown-environment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-EUW-PROD-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_EMA_AUDIT_PROD
+          geo: ema
+          lifecycle: prod
+          environment: int
+          isPrimaryGeo: true
+          teardownResourceGroup: true
+
+  - stage: TEARDOWN_EMA_TEST
+    dependsOn: TEARDOWN_EMA_INT
+    jobs:
+      - deployment: TEARDOWN_EMA_TEST
+        environment: INFRASTRUCTURE_PROD_TEST
+        pool: ASSURANCE-EUN-BCP-AKS-WIN-RELEASE
+      - template: deployment-templates/teardown-environment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-EUN-BCP-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_EMA_AUDIT_PROD
+          geo: ema
+          lifecycle: bcp
+          environment: test
+          isPrimaryGeo: true
+          teardownResourceGroup: true
+
+  - stage: DEPLOY_APA_INT
+    dependsOn: BUILD
+    jobs:
+      - deployment: DEPLOY_APA_INT
+        environment: INFRASTRUCTURE_PROD_TEST
+        pool: ASSURANCE-JPE-PROD-AKS-WIN-RELEASE
+      - template: deployment-templates/infrastructure-deployment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-JPE-PROD-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_APA_AUDIT_PROD
+          geo: apa
+          lifecycle: prod
+          environment: int
+          isPrimaryLocation: not(${{ parameters.isApaBcpPrimaryEnvironment }})
+
+  - stage: DEPLOY_APA_TEST
+    dependsOn: DEPLOY_APA_INT
+    jobs:
+      - deployment: DEPLOY_APA_TEST
+        environment: INFRASTRUCTURE_PROD_TEST
+        pool: ASSURANCE-JPW-BCP-AKS-WIN-RELEASE
+      - template: deployment-templates/infrastructure-deployment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-JPW-BCP-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_APA_AUDIT_PROD
+          geo: apa
+          lifecycle: bcp
+          environment: test
+          isPrimaryLocation: ${{ parameters.isApaBcpPrimaryEnvironment }}
+
+  - stage: TEARDOWN_APA_INT
+    dependsOn: DEPLOY_APA_TEST
+    jobs:
+      - deployment: TEARDOWN_APA_INT
+        environment: INFRASTRUCTURE_PROD_TEST
+        pool: ASSURANCE-JPE-PROD-AKS-WIN-RELEASE
+      - template: deployment-templates/teardown-environment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-JPE-PROD-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_APA_AUDIT_PROD
+          geo: apa
+          lifecycle: prod
+          environment: int
+          teardownResourceGroup: true
+
+  - stage: TEARDOWN_APA_TEST
+    dependsOn: TEARDOWN_APA_INT
+    jobs:
+      - deployment: TEARDOWN_APA_TEST
+        environment: INFRASTRUCTURE_PROD_TEST
+        pool: ASSURANCE-JPW-BCP-AKS-WIN-RELEASE
+      - template: deployment-templates/teardown-environment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-JPW-BCP-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_APA_AUDIT_PROD
+          geo: apa
+          lifecycle: bcp
+          environment: test
+          teardownResourceGroup: true

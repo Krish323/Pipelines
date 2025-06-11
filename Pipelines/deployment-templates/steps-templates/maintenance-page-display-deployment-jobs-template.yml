@@ -1,0 +1,29 @@
+parameters:
+  pool: null
+  azureSubscription: ""
+  geo: ""
+  lifecycle: ""
+  environment: ""
+  endpointName: ""
+
+jobs:
+  - job: MaintenancePageDeployment
+    pool: ${{ parameters.pool }}
+    variables:
+      - template: ../variables-templates/${{ parameters.environment}}-variables-template.yml
+      - template: ../variables-templates/${{ parameters.lifecycle }}-${{ parameters.geo}}-variables-template.yml
+      - template: ../variables-templates/${{ parameters.geo}}-variables-template.yml
+      - template: ../variables-templates/release-variables-template.yml
+        parameters:
+          environment: ${{ parameters.environment }}
+    steps:
+      - checkout: none
+      - download: current
+
+      - task: AzurePowerShell@5
+        displayName: 'Enable Traffic Manager Profile - $(geoTrafficManagerName)\${{ parameters.endpointName }}'
+        inputs:
+          azureSubscription: '${{ parameters.azureSubscription }}'
+          ScriptPath: '$(Pipeline.Workspace)/Infrastructure/Scripts/Set-TrafficManagerEndpointStatus.ps1'
+          ScriptArguments: -ResourceGroupName '$(primaryResourceGroupName)' -TrafficManagerName '$(geoTrafficManagerName)' -EndpointName '${{ parameters.endpointName }}'
+          azurePowerShellVersion: LatestVersion

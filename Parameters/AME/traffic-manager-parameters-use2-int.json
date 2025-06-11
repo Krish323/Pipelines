@@ -1,0 +1,46 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "appName": {
+        "value": "navigator"
+      },
+      "locationCode": {
+        "value": "use2"
+      },
+      "environment": {
+        "value": "int"
+      },
+      "deployGlobalTrafficManager": {
+            "value": false
+        },
+        "deployGeoTrafficManager": {
+            "value": true
+        },
+        "geoTrafficRoutingMethod": {
+            "value": "Priority"
+        },
+        "geoTrafficManagerEndpoints": {
+            "value": [
+                {
+                    "name": "primarylocation",
+                    "endpointStatus": "Disabled",
+                    "target": "audit-shared-use2-pip-prd.eastus2.cloudapp.azure.com",
+                    "priority": 1
+                },
+                {
+                    "name": "bcplocation",
+                    "endpointStatus": "Disabled",
+                    "target": "usazsubamecushubprd01-pip-prd.centralus.cloudapp.azure.com",
+                    "priority": 2
+                },
+                {
+                    "name": "maintenancepage",
+                    "endpointStatus": "Enabled",
+                    "target": "usazsubamecushubprd01-pip-npd.centralus.cloudapp.azure.com",
+                    "priority": 3
+                }
+            ]
+        }
+    }
+  }

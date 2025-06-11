@@ -1,0 +1,66 @@
+trigger: none
+
+name: $(Date:yyyyMMdd)$(Rev:.r)
+
+parameters:
+  - name: deploymentChannel
+    displayName: Deployment channel
+    type: string
+    default: Hotfix Testing
+    values:
+      - Hotfix Testing
+      - Hotfix Release
+  - name: overrideAmeBcpDbDeployment
+    displayName: Deploy DACPACs in AME BCP environment
+    type: boolean
+    default: false
+  - name: overrideApaBcpDbDeployment
+    displayName: Deploy DACPACs in APA BCP environment
+    type: boolean
+    default: false
+  - name: overrideEmaBcpDbDeployment
+    displayName: Deploy DACPACs in EMA BCP environment
+    type: boolean
+    default: false
+
+variables:
+  environmentIndex: "h"
+  artifactName: "navigatorDatabases"
+  caseMasterDacpacFileName: Deloitte.Assurance.CER.CaseDatabase
+  containerDacpacFileName: Deloitte.Assurance.CER.MemberFirmDatabase
+  masterDacpacFileName: Deloitte.Assurance.CER.Database
+
+resources:
+  repositories:
+    - repository: CER_App
+      type: git
+      name: CER_APP
+      ref: refs/heads/develop
+      
+stages:
+  - stage: BUILD
+    jobs:
+      - template: build-templates/db-build-jobs-template.yml
+        parameters:
+          pool: 
+            vmImage: 'windows-latest'
+          artifactName: $(artifactName)
+          azureSubscription: AzureRM_US_AUDIT_PREPROD
+          databaseRepositoryName: CER_App
+          databaseProjectName: Deloitte.Assurance.CER
+          databaseProjects:
+            - $(caseMasterDacpacFileName)
+            - $(containerDacpacFileName)
+            - $(masterDacpacFileName)
+
+  - ${{ if eq(parameters.deploymentChannel, 'Hotfix Testing') }}:
+      - template: stage-templates/db-feature-stage-template.yml
+        parameters:
+          environmentIndex: ${{ variables.environmentIndex }}
+
+  - ${{ if eq(parameters.deploymentChannel, 'Hotfix Release') }}:
+      - template: stage-templates/db-hotfix-stage-template.yml
+        parameters:
+          overrideAmeBcpDbDeployment: ${{ parameters.overrideAmeBcpDbDeployment }}
+          overrideApaBcpDbDeployment: ${{ parameters.overrideApaBcpDbDeployment }}
+          overrideEmaBcpDbDeployment: ${{ parameters.overrideEmaBcpDbDeployment }}

@@ -1,0 +1,48 @@
+parameters:
+  - name: geo
+    type: string
+    default: ""
+  - name: environment
+    type: string
+    default: ""
+
+variables:
+  ${{ if and(eq(parameters.environment, 'dev'), eq(parameters.geo, 'ame')) }}:
+    cekKeyVaultIndex: 2
+  ${{ if not(and(eq(parameters.environment, 'dev'), eq(parameters.geo, 'ame'))) }}:
+    cekKeyVaultIndex:
+
+  ${{ if eq(parameters.environment, 'dev') }}:
+    cekKeyVaultEnvironment: dev
+    cekKeyVaultEnvironmentAlias: d
+
+  ${{ if eq(parameters.environment, 'qa') }}:
+    cekKeyVaultEnvironment: qa
+    cekKeyVaultEnvironmentAlias: q
+
+  ${{ if eq(parameters.environment, 'load') }}:
+    cekKeyVaultEnvironment: load
+    cekKeyVaultEnvironmentAlias: l
+
+  ${{ if in(parameters.environment, 'stage', 'val') }}:
+    cekKeyVaultEnvironment: stage
+    cekKeyVaultEnvironmentAlias: s
+
+  ${{ if in(parameters.environment, 'prod', 'int') }}:
+    cekKeyVaultEnvironment: prod
+    cekKeyVaultEnvironmentAlias:
+
+  ${{ if in(parameters.environment, 'bcp', 'test') }}:
+    cekKeyVaultEnvironment: bcp
+    cekKeyVaultEnvironmentAlias:
+
+  # Default everything else to dev
+  ${{ if notin(parameters.environment, 'dev', 'qa', 'load', 'stage', 'val', 'prod', 'int', 'bcp', 'test') }}:
+    cekKeyVaultEnvironment: dev
+    cekKeyVaultEnvironmentAlias: d
+
+  cekKeyVaultName: $(cekKeyVaultEnvironmentAlias)auditcekvault$(cekKeyVaultIndex)$(locationCode)
+  cekKeyVaultIdentity: $(cekKeyVaultName)-identity
+  cekKeyVaultResourceGroup: azrg_aud_containerencryptionkeys_$(cekKeyVaultEnvironment)$(cekKeyVaultIndex)_$(geo)_$(locationCode)
+  cekVaultPermissionsToSecrets: "get,list"
+  cekKeyVaultSubnets: $(appSubnetName)

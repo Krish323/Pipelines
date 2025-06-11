@@ -1,0 +1,51 @@
+parameters:
+  repositoryName: ""
+  projectName: ""
+  artifactName: ""
+  buildConfiguration: ""
+  dotNetCoreVersion: 8.x
+  vstsFeed: ""
+
+steps:
+  - checkout: ${{ parameters.repositoryName }}
+    clean: true
+
+  - task: UseDotNet@2
+    displayName: "Use .Net Core sdk ${{ parameters.dotNetCoreVersion }}"
+    inputs:
+      version: "${{ parameters.dotNetCoreVersion }}"
+
+  - task: DotNetCoreCLI@2
+    displayName: "dotnet restore: ${{ parameters.projectName }}"
+    inputs:
+      command: restore
+      projects: "**/*.csproj"
+      vstsFeed: "${{ parameters.vstsFeed }}"
+
+  - task: DotNetCoreCLI@2
+    displayName: "dotnet build: ${{ parameters.projectName }}"
+    inputs:
+      projects: "**/${{ parameters.projectName }}.csproj"
+      arguments: "-c ${{ parameters.buildConfiguration }} --no-restore"
+
+  - task: DotNetCoreCLI@2
+    displayName: "dotnet publish: ${{ parameters.projectName }}"
+    inputs:
+      command: publish
+      publishWebProjects: false
+      projects: "**/${{ parameters.projectName }}.csproj"
+      arguments: "-c ${{ parameters.buildConfiguration }} -o $(Build.ArtifactStagingDirectory) --no-build"
+      zipAfterPublish: true
+
+  - task: PowerShell@2
+    displayName: "Display Folder Contents"
+    inputs:
+      targetType: inline
+      script: |
+        Get-ChildItem -Path $(Build.ArtifactStagingDirectory) -Recurse
+
+  - task: PublishPipelineArtifact@1
+    displayName: "Publish Pipeline Artifact"
+    inputs:
+      artifactName: ${{ parameters.artifactName }}
+      targetPath: $(Build.ArtifactStagingDirectory)

@@ -1,0 +1,30 @@
+parameters:
+  azureSubscription: ""
+ 
+steps:
+  - task: AzurePowerShell@5
+    displayName: 'Update Geo TM Target - $(geo) - $(environmentFullName)'
+    inputs:
+      azureSubscription: '${{ parameters.azureSubscription }}'
+      ScriptType: FilePath
+      ScriptPath: '$(Pipeline.Workspace)/Infrastructure/Scripts/Set-TrafficManagerEndpointTarget.ps1'
+      ScriptArguments: "-ResourceGroupName '$(resourceGroupName)' -TrafficManagerName '$(geoTrafficManagerName)' -EndpointName '$(primaryEndpoint)' -EndpointTarget '$(maintenancePageVipDnsName)'"
+      azurePowerShellVersion: LatestVersion
+
+  - task: AzurePowerShell@5
+    displayName: 'Delete Azure Resources - $(geo) - $(environmentFullName)'
+    inputs:
+      azureSubscription: '${{ parameters.azureSubscription }}'
+      ScriptType: FilePath
+      ScriptPath: '$(Pipeline.Workspace)/Infrastructure/Scripts/Remove-AzResources.ps1'
+      ScriptArguments: "-ResourceGroupName '$(resourceGroupName)' -ProtectedResourceTypeList '$(dimProtectedResourceTypeList)' -ProtectInternalPrivateEndpoints"
+      azurePowerShellVersion: LatestVersion
+
+  - task: AzurePowerShell@5
+    displayName: 'Scale Down Elastic Pools'
+    inputs:
+      azureSubscription: '${{ parameters.azureSubscription }}'
+      ScriptType: FilePath
+      ScriptPath: '$(Pipeline.Workspace)/Infrastructure/Scripts/Invoke-ScaleDownElasticPool.ps1'
+      ScriptArguments: "-ResourceGroupName '$(resourceGroupName)'"
+      azurePowerShellVersion: LatestVersion

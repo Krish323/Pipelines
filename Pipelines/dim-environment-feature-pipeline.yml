@@ -1,0 +1,32 @@
+trigger: none
+
+name: $(Date:yyyyMMdd)$(Rev:.r)
+
+parameters:
+  - name: deploymentChannel
+    displayName: Deployment Channel
+    type: string
+    default: Feature Testing
+    values:
+      - Feature Testing
+      - Feature Release
+
+variables:
+  environmentIndex: "4"
+  pipelineId: 20309
+
+stages:
+  - stage: BUILD
+    jobs:
+      - template: build-templates/infrastructure-build-jobs-template.yml
+        parameters:
+          scriptCopyOnly: false
+          validateTemplates: true
+
+  - ${{ if eq(parameters.deploymentChannel, 'Feature Testing') }}:
+    - template: stage-templates/dim-environment-feature-stage-template.yml
+      parameters:
+        environmentIndex: ${{ variables.environmentIndex }}
+
+  - ${{ if and(eq(parameters.deploymentChannel, 'Feature Release'), eq(variables['System.DefinitionId'], variables.pipelineId)) }}:
+    - template: stage-templates/dim-environment-release-stage-template.yml

@@ -1,0 +1,94 @@
+parameters:
+  - name: environmentIndex
+    type: string
+  - name: webAppServices
+    type: object
+
+stages:
+  - stage: EMA_DEV_${{ parameters.environmentIndex }}
+    dependsOn: BUILD
+    jobs:
+      - deployment: EMA_DEV
+        environment: APPLICATION_DEV
+        pool: ASSURANCE-EUW-NPD-AKS-WIN-RELEASE
+      - template: ../deployment-templates/ui-deployment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-EUW-NPD-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_EMA_AUDIT_PREPROD
+          geo: ema
+          environmentIndex: ${{ parameters.environmentIndex }}
+          environment: dev
+          lifecycle: npd
+          isPrimaryGeo: true
+          webAppServices: ${{ parameters.webAppServices }}
+
+  - stage: EMA_QA_${{ parameters.environmentIndex }}
+    dependsOn: EMA_DEV_${{ parameters.environmentIndex }}
+    jobs:
+      - deployment: EMA_QA
+        environment: APPLICATION_QA
+        pool: ASSURANCE-EUW-NPD-AKS-WIN-RELEASE
+      - template: ../deployment-templates/ui-deployment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-EUW-NPD-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_EMA_AUDIT_PREPROD
+          geo: ema
+          environmentIndex: ${{ parameters.environmentIndex }}
+          environment: qa
+          lifecycle: npd
+          isPrimaryGeo: true
+          webAppServices: ${{ parameters.webAppServices }}
+
+  - stage: AME_QA_${{ parameters.environmentIndex }}
+    dependsOn: BUILD
+    jobs:
+      - deployment: AME_QA
+        environment: APPLICATION_QA
+        pool: ASSURANCE-USE2-NPD-AKS-WIN-RELEASE
+      - template: ../deployment-templates/ui-deployment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-USE2-NPD-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_US_AUDIT_PREPROD
+          geo: ame
+          environmentIndex: ${{ parameters.environmentIndex }}
+          environment: qa
+          lifecycle: npd
+          webAppServices: ${{ parameters.webAppServices }}
+
+  - stage: AME_QA_SMOKE
+    dependsOn: AME_QA_${{ parameters.environmentIndex }}
+    jobs:
+      - deployment: AME_QA_SMOKE
+        environment: APPLICATION_QA
+      - template: ../deployment-templates/tosca-deployment-jobs-template.yml
+        parameters:
+          toscaPathToXml: $(toscaPathToSmokeTestXml)
+          toscaPathToBatchFile: $(toscaPathToSmokeTestBatchFile)
+          stageName: 'Smoke_Test'
+
+  - stage: AME_QA_REGRESSION
+    dependsOn: AME_QA_SMOKE
+    jobs:
+      - deployment: AME_QA_REGRESSION
+        environment: APPLICATION_QA
+      - template: ../deployment-templates/tosca-deployment-jobs-template.yml
+        parameters:
+            toscaPathToXml: $(toscaPathToRegressionTestXml)
+            toscaPathToBatchFile: $(toscaPathToRegressionTestBatchFile)
+            stageName: 'Regression_Test'
+
+  - stage: APA_QA_${{ parameters.environmentIndex }}
+    dependsOn: BUILD
+    jobs:
+      - deployment: APA_QA
+        environment: APPLICATION_QA
+        pool: ASSURANCE-JPE-NPD-AKS-WIN-RELEASE
+      - template: ../deployment-templates/ui-deployment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-JPE-NPD-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_APA_AUDIT_PREPROD
+          geo: apa
+          environmentIndex: ${{ parameters.environmentIndex }}
+          environment: qa
+          lifecycle: npd
+          webAppServices: ${{ parameters.webAppServices }}

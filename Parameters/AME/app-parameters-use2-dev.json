@@ -1,0 +1,46 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "appName": {
+            "value": "navigator"
+        },
+        "locationCode": {
+            "value": "use2"
+        },
+        "environment": {
+            "value": "dev"
+        },
+        "applicationLogAnalyticsWorkspace": {
+            "value": "/subscriptions/7f6d79ff-04b7-4131-a3ec-8d9cb7166ae1/resourceGroups/AZRG-USE2-AUD-ASSURANCE-NPD-SHARED/providers/Microsoft.OperationalInsights/workspaces/nassurancelause2"
+        },
+        "appGatewaySubnets": {
+            "value": [
+                {
+                    "resourceGroupName": "AUDIT_PREPROD_RG_Network",
+                    "vnetName": "azuseprdvnt01",
+                    "subnetName": "auditnpduse2ag1_subnet"
+                }
+            ]
+        },
+        "keyManagementSubnets": {
+            "value": [
+                {
+                    "resourceGroupName": "AUDIT_PREPROD_RG_Network",
+                    "vnetName": "AZ-EUS2-AUD-NPD-GlobalAudit",
+                    "subnetName": "AUDIT_PREPROD_OMNIA_APP_SUBNET"
+                },
+                {
+                    "resourceGroupName": "AZRG_OMNIABUILD_PREPROD_AME_USE2_AKS",
+                    "vnetName": "npdomniaaksvnetuse2",
+                    "subnetName": "nodes-subnet"
+                },
+                {
+                    "resourceGroupName": "AUDIT_PREPROD_RG_Network",
+                    "vnetName": "azuseprdvnt01",
+                    "subnetName": "AUDIT_PREPROD_OMNIA_GENERAL_SUBNET"
+                }
+            ]
+        }
+    }
+}

@@ -1,0 +1,11 @@
+variables:
+  appDbNames: Navigator_Case_Master
+  containerInstanceCodes: 'AU,GU,HK,ID,IN,JP,KH,KR,LA,MM,MU,MY,NZ,PG,PH,SG,TH,TW,VN'
+  deployKeyVaultName: fincalcapanpddeployvault
+  geo: 'apa'
+  lifecycle: 'npd'
+  lifecycleAlias: 'n'
+  location: 'japaneast'
+  locationCode: 'jpe'
+  subscriptionId: '579d5d7f-d0b3-4cc6-9c61-6715b876a8fe'
+  primaryEndpointTarget: 'audit-shared-npd.westeurope.cloudapp.azure.com'

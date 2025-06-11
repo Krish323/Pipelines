@@ -1,0 +1,17 @@
+parameters:
+  artifactName: ""
+  reactProjects: []
+
+jobs:
+  - template: infrastructure-build-jobs-template.yml
+
+  - ${{ each job in parameters.reactProjects }}:
+      - ${{ each pair in job }}:
+          ${{ if ne(pair.key, 'steps') }}:
+            ${{ pair.key }}: ${{ pair.value }}
+        steps:
+          - template: steps-templates/react-build-steps-template.yml
+            parameters:
+              repositoryName: "${{ job.variables.repositoryName }}"
+              projectName: "${{ job.variables.projectName }}"
+              artifactName: "${{ job.variables.artifactName }}"

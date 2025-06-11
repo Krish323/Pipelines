@@ -1,0 +1,166 @@
+trigger: none
+
+name: $(Date:yyyyMMdd)$(Rev:.r)
+
+#cron expression is a space-delimited expression with five entries in the following order
+# mm HH DD MM DW
+#  \  \  \  \  \__ Days of week
+#   \  \  \  \____ Months
+#    \  \  \______ Days
+#     \  \________ Hours
+#      \__________ Minutes
+# Daily 10 PM CST '0 4 * * *'
+schedules:
+- cron: '0 4 * * *'
+  displayName: Scheduled Teardown Pipeline for DEV4/INT/TEST environments runs Daily at 10 pm CST
+  branches:
+    include:
+    - develop_3.4.1
+  always: true
+
+variables:
+  environmentIndex: "4"
+  pipelineId: 20864
+
+stages:
+- stage: BUILD
+  jobs:
+  - template: build-templates/infrastructure-build-jobs-template.yml
+
+- stage: TEARDOWN_AME_DEV_${{ variables.environmentIndex }}
+  dependsOn: BUILD
+  jobs:
+    - deployment: AME_DEV_${{ variables.environmentIndex }}
+      environment: INFRASTRUCTURE_CLEANUP
+      pool: ASSURANCE-USE2-NPD-AKS-WIN-RELEASE
+    - template: deployment-templates/teardown-environment-jobs-template.yml
+      parameters:
+        pool: ASSURANCE-USE2-NPD-AKS-WIN-RELEASE
+        azureSubscription: AzureRM_US_AUDIT_PREPROD
+        geo: ame
+        lifecycle: npd
+        environment: dev
+        environmentIndex: ${{ variables.environmentIndex }}
+        teardownResourceGroup: false
+
+- stage: TEARDOWN_AME_INT
+  dependsOn: BUILD
+  jobs:
+    - deployment: TEARDOWN_AME_INT
+      environment: INFRASTRUCTURE_CLEANUP
+      pool: ASSURANCE-USE2-PROD-AKS-WIN-RELEASE
+    - template: deployment-templates/teardown-environment-jobs-template.yml
+      parameters:
+        pool: ASSURANCE-USE2-PROD-AKS-WIN-RELEASE
+        azureSubscription: AzureRM_US_AUDIT_PROD
+        geo: ame
+        lifecycle: prod
+        environment: int
+        teardownResourceGroup: true
+
+- stage: TEARDOWN_AME_TEST
+  dependsOn: BUILD
+  jobs:
+    - deployment: TEARDOWN_AME_TEST
+      environment: INFRASTRUCTURE_CLEANUP
+      pool: ASSURANCE-USC-BCP-AKS-WIN-RELEASE
+    - template: deployment-templates/teardown-environment-jobs-template.yml
+      parameters:
+        pool: ASSURANCE-USC-BCP-AKS-WIN-RELEASE
+        azureSubscription: AzureRM_US_AUDIT_PROD 
+        geo: ame
+        lifecycle: bcp
+        environment: test
+        teardownResourceGroup: true
+
+- stage: TEARDOWN_EMA_DEV_${{ variables.environmentIndex }}
+  dependsOn: BUILD
+  jobs:
+    - deployment: EMA_DEV_${{ variables.environmentIndex }}
+      environment: INFRASTRUCTURE_CLEANUP
+      pool: ASSURANCE-EUW-NPD-AKS-WIN-RELEASE
+    - template: deployment-templates/teardown-environment-jobs-template.yml
+      parameters:
+        pool: ASSURANCE-EUW-NPD-AKS-WIN-RELEASE
+        azureSubscription: AzureRM_EMA_AUDIT_PREPROD
+        geo: ema
+        lifecycle: npd
+        environment: dev
+        environmentIndex: ${{ variables.environmentIndex }}
+        teardownResourceGroup: false
+
+- stage: TEARDOWN_EMA_INT
+  dependsOn: BUILD
+  jobs:
+    - deployment: TEARDOWN_EMA_INT
+      environment: INFRASTRUCTURE_CLEANUP
+      pool: ASSURANCE-EUW-PROD-AKS-WIN-RELEASE
+    - template: deployment-templates/teardown-environment-jobs-template.yml
+      parameters:
+        pool: ASSURANCE-EUW-PROD-AKS-WIN-RELEASE
+        azureSubscription: AzureRM_EMA_AUDIT_PROD
+        environment: int
+        geo: ema
+        lifecycle: prod
+        teardownResourceGroup: true
+
+- stage: TEARDOWN_EMA_TEST
+  dependsOn: BUILD
+  jobs:
+    - deployment: TEARDOWN_EMA_TEST
+      environment: INFRASTRUCTURE_CLEANUP
+      pool: ASSURANCE-EUN-BCP-AKS-WIN-RELEASE
+    - template: deployment-templates/teardown-environment-jobs-template.yml
+      parameters:
+        pool: ASSURANCE-EUN-BCP-AKS-WIN-RELEASE
+        azureSubscription: AzureRM_EMA_AUDIT_PROD
+        environment: test
+        geo: ema
+        lifecycle: bcp
+        teardownResourceGroup: true
+
+- stage: TEARDOWN_APA_DEV_${{ variables.environmentIndex }}
+  dependsOn: BUILD
+  jobs:
+    - deployment: APA_DEV_${{ variables.environmentIndex }}
+      environment: INFRASTRUCTURE_CLEANUP
+      pool: ASSURANCE-JPE-NPD-AKS-WIN-RELEASE
+    - template: deployment-templates/teardown-environment-jobs-template.yml
+      parameters:
+        pool: ASSURANCE-JPE-NPD-AKS-WIN-RELEASE
+        azureSubscription: AzureRM_APA_AUDIT_PREPROD
+        geo: apa
+        lifecycle: npd
+        environment: dev
+        environmentIndex: ${{ variables.environmentIndex }}
+        teardownResourceGroup: false
+
+- stage: TEARDOWN_APA_INT
+  dependsOn: BUILD
+  jobs:
+    - deployment: TEARDOWN_APA_INT
+      environment: INFRASTRUCTURE_CLEANUP
+      pool: ASSURANCE-JPE-PROD-AKS-WIN-RELEASE
+    - template: deployment-templates/teardown-environment-jobs-template.yml
+      parameters:
+        pool: ASSURANCE-JPE-PROD-AKS-WIN-RELEASE
+        azureSubscription: AzureRM_APA_AUDIT_PROD
+        environment: int
+        geo: apa
+        lifecycle: prod
+        teardownResourceGroup: true
+
+- stage: TEARDOWN_APA_TEST
+  dependsOn: BUILD
+  jobs:
+    - deployment: TEARDOWN_APA_TEST
+      environment: INFRASTRUCTURE_CLEANUP
+      pool: ASSURANCE-JPW-BCP-AKS-WIN-RELEASE
+    - template: deployment-templates/teardown-environment-jobs-template.yml
+      parameters:
+        pool: ASSURANCE-JPW-BCP-AKS-WIN-RELEASE
+        azureSubscription: AzureRM_APA_AUDIT_PROD 
+        environment: test
+        geo: apa
+        lifecycle: bcp
+        teardownResourceGroup: true

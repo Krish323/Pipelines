@@ -1,0 +1,12 @@
+trigger: none
+
+name: $(Date:yyyyMMdd)$(Rev:.r)
+
+stages:
+  - stage: BUILD
+    jobs:
+      - template: build-templates/infrastructure-build-jobs-template.yml
+        parameters:
+          createArtifact: false
+          validateTemplates: true
+          scriptCopyOnly: false

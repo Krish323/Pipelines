@@ -1,0 +1,64 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "appName": {
+            "value": "navigator"
+        },
+        "environment": {
+            "value": "bcp"
+        },
+        "locationCode": {
+            "value": "usc"
+        },
+        "primaryEnvironment": {
+            "value": "prod"
+        },
+        "primaryLocationCode": {
+            "value": "use2"
+        },
+        "spnName": {
+            "value": "US Audit Prod SPN"
+        },
+        "spnObjectId": {
+            "value": "fec9ca4b-e6ce-4ecd-9648-b2f569f2bdf9"
+        },
+        "vnetFirewallRules": {
+            "value": [
+                {
+                    "resourceGroupName": "AUDIT_PROD_RG_Network",
+                    "vnetName": "azeus2prdvnt01",
+                    "subnetName": "AUDIT_PROD_OMNIA_General_Subnet"
+                },
+                {
+                    "resourceGroupName": "AUDIT_PROD_RG_Network",
+                    "vnetName": "azucusprdvnt01",
+                    "subnetName": "AUDIT_PRODBCP_OMNIA_General_Subnet"
+                },
+                {
+                    "resourceGroupName": "AZRG_OMNIABUILD_PROD_AME_USE2_AKS",
+                    "vnetName": "prdomniaaksvnetuse2",
+                    "subnetName": "nodes-subnet"
+                },
+                {
+                    "resourceGroupName": "AZRG_OMNIABUILD_BCP_AME_CUS_AKS",
+                    "vnetName": "bcpomniaaksvnetcus",
+                    "subnetName": "nodes-subnet"
+                }
+            ]
+        },
+        "kvAccessPolicies": {
+            "value": [
+                {
+                    "objectId": "01442563-518b-475d-9abd-ffa6c95f57aa",
+                    "comments": "Access Policies for SG-US Cloud DevOps Audit Prod",
+                    "secretsPermissions": [
+                        "all"
+                    ],
+                    "keysPermissions": [],
+                    "certificatesPermissions": []
+                }
+            ]
+        } 
+    }
+}

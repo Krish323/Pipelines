@@ -1,0 +1,15 @@
+trigger: none
+
+name: $(Date:yyyyMMdd)$(Rev:.r)
+
+variables:
+  environmentIndex: "4"
+
+stages:
+  - stage: BUILD
+    jobs:
+      - template: build-templates/infrastructure-build-jobs-template.yml
+
+  - template: stage-templates/teardown-environment-feature-stage-template.yml
+    parameters:
+      environmentIndex: ${{ variables.environmentIndex }}

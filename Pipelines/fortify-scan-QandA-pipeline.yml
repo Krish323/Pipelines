@@ -1,0 +1,66 @@
+trigger: none
+
+name: $(Date:yyyyMMdd)$(Rev:.r)
+
+resources:
+  repositories:
+    - repository: CER_QandA
+      type: git
+      name: CER_QandA
+      ref: refs/heads/develop
+
+stages:
+  - stage: FORTIFY_SCAN_QNA
+    jobs:
+      - job: GetFortifyCredentials
+        pool: ASSURANCE-USE2-NPD-AKS-WIN-RELEASE
+        variables:
+          - template: variables-templates/npd-ame-variables-template.yml
+          - template: variables-templates/release-variables-template.yml
+        steps:
+          - checkout: self
+
+          - template: build-templates\steps-templates\get-fortify-secrets-steps-template.yml
+            parameters:
+              azureSubscription: AzureRM_US_AUDIT_PREPROD
+
+      - job: FortifyScanQnA
+        dependsOn: GetFortifyCredentials
+        pool: Levvia Preprod Build
+        variables:
+          - template: variables-templates/fortify-variables-template.yml
+          - name: ScanCentralClientAuthToken
+            value: $[ dependencies.GetFortifyCredentials.outputs['fortifyAuthToken.ScanCentralClientAuthToken'] ]
+          - name: ScanCentralCiToken
+            value: $[ dependencies.GetFortifyCredentials.outputs['fortifyCiToken.ScanCentralCiToken'] ]
+        steps:
+          - checkout: CER_QandA
+
+          - task: PowerShell@2
+            displayName: "Cleanup Unit test folders"
+            inputs:
+              targetType: "inline"
+              script: |
+                Write-Host "`n`nBuild.SourcesDirectory Directory Contents before cleanup"
+                Get-ChildItem -Path $(Build.SourcesDirectory)
+
+                # Delete Folders before Running Fortify Scan
+                Write-Host "`n`nDeleting folders $(Build.SourcesDirectory)/*/*.Tests"
+                Remove-Item  -Path $(Build.SourcesDirectory)/*.Tests -Force -Recurse
+
+                Write-Host "`n`nnBuild.SourcesDirectory Directory Contents after cleanup:"
+                Get-ChildItem -Path $(Build.SourcesDirectory)
+
+          - task: fortifyvsts.hpe-security-fortify-vsts.build-task-fortify-scancentral-sast.FortifyScanCentralSAST@7
+            displayName: "Fortify Scan QnA"
+            inputs:
+              scanCentralCtrlUrl: "$(fortifyCtrlUrl)"
+              scanCentralClientToken: "$(ScanCentralClientAuthToken)"
+              sscUrl: $(fortifySscUrl)"
+              sscCiToken: "$(ScanCentralCiToken)"
+              uploadToSSC: true
+              applicationName: "$(fortifyAppName)"
+              applicationVersion: "GA-Navigator-QnA-1-SAST"
+              buildTool: none
+              includeNodeModules: false
+              quiet: false

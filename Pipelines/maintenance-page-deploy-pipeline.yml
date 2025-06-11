@@ -1,0 +1,109 @@
+trigger: none
+
+name: $(Date:yyyyMMdd)$(Rev:.r)
+
+resources:
+  repositories:
+    - repository: CER_App
+      type: git
+      name: CER_App
+      ref: refs/heads/develop
+
+stages:
+  - stage: Build_Maintenance_Page
+    jobs:
+      - job: BuildMaintenancePage
+        workspace:
+          clean: all
+        pool: ASSURANCE-USE2-NPD-AKS-WIN-RELEASE
+        steps:
+          - checkout: CER_App
+            clean: true
+            
+          - task: ArchiveFiles@2
+            displayName: 'Archive MaintenancePage'
+            inputs:
+              rootFolderOrFile: MaintenancePage
+              includeRootFolder: false
+              archiveFile: '$(Build.ArtifactStagingDirectory)/MaintenancePage.zip'
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Pipeline Artifact'
+            inputs:
+              targetPath: '$(Build.ArtifactStagingDirectory)'
+              artifact: MaintenancePage
+
+  - stage: Deploy_Maintenance_Page_AME
+    dependsOn: Build_Maintenance_Page
+    jobs:
+      - job: DeployMaintenancePage
+        workspace:
+          clean: all
+        pool: ASSURANCE-USC-BCP-AKS-WIN-RELEASE
+        variables:
+          - template: ./variables-templates/ame-variables-template.yml    
+        steps:
+          - checkout: none  
+          - task: DownloadPipelineArtifact@2
+            displayName: "Download Maintenance Page Artifact"
+            inputs:
+              artifactName: MaintenancePage
+              path: $(Pipeline.Workspace)
+
+          - task: AzureRmWebAppDeployment@4
+            displayName: 'Deploy Maintenance Page'
+            inputs:
+              azureSubscription: "AzureRM_US_AUDIT_PROD"
+              WebAppName: '$(MaintenancePageAppServiceName)'
+              packageForLinux: '$(Pipeline.Workspace)/MaintenancePage.zip'
+              enableCustomDeployment: true
+
+  - stage: Deploy_Maintenance_Page_EMA
+    dependsOn: Build_Maintenance_Page
+    jobs:
+      - job: DeployMaintenancePage
+        workspace:
+          clean: all
+        pool: ASSURANCE-EUN-BCP-AKS-WIN-RELEASE
+        variables:
+          - template: ./variables-templates/ema-variables-template.yml   
+        steps:
+          - checkout: none    
+          - task: DownloadPipelineArtifact@2
+            displayName: "Download Maintenance Page Artifact"
+            inputs:
+              artifactName: MaintenancePage
+              path: $(Pipeline.Workspace)
+
+          - task: AzureRmWebAppDeployment@4
+            displayName: 'Deploy Maintenance Page'
+            inputs:
+              azureSubscription: "AzureRM_EMA_Audit_PROD"
+              WebAppName: '$(MaintenancePageAppServiceName)'
+              packageForLinux: '$(Pipeline.Workspace)/MaintenancePage.zip'
+              enableCustomDeployment: true
+
+  - stage: Deploy_Maintenance_Page_APA
+    dependsOn: Build_Maintenance_Page
+    jobs:
+      - job: DeployMaintenancePage
+        workspace:
+          clean: all
+        pool: ASSURANCE-JPW-BCP-AKS-WIN-RELEASE
+        variables:
+          - template: ./variables-templates/apa-variables-template.yml   
+        steps:
+          - checkout: none    
+          - task: DownloadPipelineArtifact@2
+            displayName: "Download Maintenance Page Artifact"
+            inputs:
+              artifactName: MaintenancePage
+              path: $(Pipeline.Workspace)
+
+          - task: AzureRmWebAppDeployment@4
+            displayName: 'Deploy Maintenance Page'
+            inputs:
+              azureSubscription: "AzureRM_APA_AUDIT_PROD"
+              WebAppName: '$(MaintenancePageAppServiceName)'
+              packageForLinux: '$(Pipeline.Workspace)/MaintenancePage.zip'
+              enableCustomDeployment: true

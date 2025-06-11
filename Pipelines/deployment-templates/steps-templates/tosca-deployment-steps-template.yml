@@ -1,0 +1,39 @@
+parameters:
+  toscaPathToXml: ""
+  toscaPathToBatchFile: ""
+  stageName: ""
+
+steps:
+  - checkout: self
+    clean: true
+
+  - task: CmdLine@2
+    displayName: Invoke Tosca ExecutionList
+    inputs:
+      script: '"$(toscaPathToCIClient)" -m $(toscaExecutionPath) -x True -c "${{ parameters.toscaPathToXml }}" -t junit -r "$(toscaPathToResultsXml)\Result.xml"'
+      continueOnError: true
+          
+  - task: PublishTestResults@2
+    displayName: Publish Test Results Result.xml
+    inputs:
+      testResultsFormat: 'JUnit' 
+      testResultsFiles: 'Result.xml' 
+      searchFolder: $(toscaPathToResultsXml) 
+
+  - task: BatchScript@1
+    displayName: Generate PDF Report "${{ parameters.toscaPathToBatchFile }}"
+    inputs:
+      filename: "${{ parameters.toscaPathToBatchFile }}"
+      arguments: '"$(Release.DefinitionName)" "$(Release.ReleaseName)" "$(Release.EnvironmentName)"'
+
+  - task: PowerShell@2
+    displayName: Send Report Email 
+    inputs:
+      filePath: $(toscaEmailScriptPath)
+      arguments: -ReleaseName '$(Release.DefinitionName)' -ReleaseDefnName '$(Release.DefinitionName)' -StageName '${{ parameters.stageName }}'  -PathToResultsXml '$(toscaPathToResultsXml)' -tkn '$(toscaEmailToken)' -DeploymentAttempt '$(Release.AttemptNumber)' 
+      errorActionPreference: 'stop' 
+      warningPreference: 'default' 
+      informationPreference: 'default' 
+      verbosePreference: 'default' 
+      debugPreference: 'default' 
+      progressPreference: 'silentlyContinue' 

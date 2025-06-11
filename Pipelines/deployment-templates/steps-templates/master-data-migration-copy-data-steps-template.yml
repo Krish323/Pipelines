@@ -1,0 +1,34 @@
+parameters:
+  azureSubscription: ""
+  applicationRepo: ""
+  infrastructureRepo: ""
+
+steps:
+  - checkout: ${{ parameters.applicationRepo }}
+    clean: true
+    path: App
+
+  - checkout: ${{ parameters.infrastructureRepo }}
+    clean: true
+    path: Infrastructure
+
+  - task: AzurePowerShell@5
+    displayName: 'Get DB Admin Password - $(geo) $(environment)'
+    inputs:
+      azureSubscription: ${{ parameters.azureSubscription }}
+      ScriptType: FilePath
+      ScriptPath: '$(Pipeline.Workspace)/Infrastructure/PipelineScripts/Set-SecretAsPipelineVariable.ps1'
+      ScriptArguments: '-KeyVaultName ''$(deployKeyVaultName)'' -SecretName ''$(dbAdminPasswordSecretName)'' -VariableName ''dbAdminPassword'''
+      azurePowerShellVersion: LatestVersion
+
+  - task: SqlAzureDacpacDeployment@1
+    displayName: Migrate Navigator_Master Data - $(geo) $(environment)'
+    inputs:
+      azureSubscription: ${{ parameters.azureSubscription }}
+      DatabaseName: Navigator_Case_Master
+      deployType: SqlTask
+      ServerName: $(sqlServerName).database.windows.net
+      SqlFile: '$(Pipeline.Workspace)/App/Deloitte.Assurance.CER.CaseDatabase/scripts/Migration_3.0/Data_migration_Navigator_Case_Master.sql'
+      SqlAdditionalArguments: -Variable "credIdentity=migration_account", "credSecret=$(migrationSqlUserPassword)", "remoteServer=$(sqlServerNameMaster).database.windows.net"
+      SqlPassword: '$(dbAdminPassword)'
+      SqlUsername: '$(dbAdminLoginName)'

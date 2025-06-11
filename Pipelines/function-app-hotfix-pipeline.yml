@@ -1,0 +1,65 @@
+trigger: none
+
+name: $(Date:yyyyMMdd)$(Rev:.r)
+
+parameters:
+  - name: deploymentChannel
+    displayName: Deployment Channel
+    type: string
+    default: Hotfix Testing
+    values:
+      - Hotfix Testing
+      - Hotfix Release
+
+variables:
+  buildConfiguration: "Release"
+  environmentIndex: "h"
+  qnaResourceName: qna
+  qnaArtifactName: navigatorQnA
+  qnaPackageName: QandAFunctionApp.zip
+
+resources:
+  repositories:
+    - repository: CER_QandA
+      type: git
+      name: CER_QandA
+      ref: refs/heads/develop
+
+stages:
+  - stage: BUILD
+    jobs:
+      - template: build-templates/function-app-build-jobs-template.yml
+        parameters:
+          pool: 
+            vmImage: 'windows-latest'
+          azureSubscription: "AzureRM_US_AUDIT_PREPROD"
+          resourceGroupName: "AZRG-USE2-AUD-ASSURANCE-CI-VALIDATION"
+          buildConfiguration: "$(buildConfiguration)"
+          vstsFeed: "9742bf8b-0208-4a5c-b127-6fdb446ad826"
+          dotnetCoreProjects:
+            - job: QandABuild
+              pool: 
+                vmImage: 'windows-latest'
+              variables:
+                repositoryName: CER_QandA
+                projectName: QandAFunctionApp
+                artifactName: "$(qnaArtifactName)"
+
+  - ${{ if eq(parameters.deploymentChannel, 'Hotfix Testing') }}:
+    - template: stage-templates/function-app-feature-stage-template.yml
+      parameters:
+        environmentIndex: ${{ variables.environmentIndex }}
+        functionApps:
+          navigatorQnA:
+            resourceName: "$(qnaResourceName)"
+            artifactName: "$(qnaArtifactName)"
+            packageName: "$(qnaPackageName)"
+
+  - ${{ if eq(parameters.deploymentChannel, 'Hotfix Release') }}:
+    - template: stage-templates/function-app-hotfix-stage-template.yml
+      parameters:
+        functionApps:
+          navigatorQnA:
+            resourceName: "$(qnaResourceName)"
+            artifactName: "$(qnaArtifactName)"
+            packageName: "$(qnaPackageName)"

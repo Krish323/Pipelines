@@ -1,0 +1,13 @@
+variables:
+  azureSubscription: "AzureRM_EMA_AUDIT_PREPROD"
+  keyVaultName: "AuditNPDAMEDevOpsKV"
+  secretName: "whitesource-api-key"
+  whiteSourceJarPath: "E:\\work\\whitesource\\wss-unified-agent.jar" 
+  whiteSourceConfigPath: "$(Build.SourcesDirectory)\\CER_App\\Whitesource\\whitesource-fs-agent.config"
+  whiteSourceConfigPathQnA: "$(Build.SourcesDirectory)\\CER_QandA\\Whitesource\\whitesource-fs-agent.config" 
+  whiteSourceProjectNameApi: "IPO API" 
+  whiteSourceScanFoldersApi: "Deloitte.Assurance.CER.Api,Deloitte.Assurance.CER.BusinessLogic,Deloitte.Assurance.CER.Common,Deloitte.Assurance.CER.Data,Deloitte.Assurance.CER.Database,Deloitte.Assurance.CER.MemberFirmDatabase,Deloitte.Assurance.CER.Office,Deloitte.Assurance.CER.QuestionnaireGenerator"
+  whiteSourceProjectNameUI: "IPO UI" 
+  whiteSourceScanFoldersUI: "Deloitte.Assurance.CER.UI"
+  whiteSourceProjectNameQNA: "IPO QNA" 
+  whiteSourceScanFoldersQNA: "QandAFunctionApp,RulesEngine" 

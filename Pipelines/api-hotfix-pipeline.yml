@@ -1,0 +1,62 @@
+trigger: none
+
+name: $(Date:yyyyMMdd)$(Rev:.r)
+
+parameters:
+  - name: deploymentChannel
+    type: string
+    default: Hotfix Testing
+    values:
+      - Hotfix Testing
+      - Hotfix Release
+
+variables:
+  environmentIndex: "h"
+  apiArtifactName: navigatorApi
+  apiResourceName: api
+  apiPackageName: Deloitte.Assurance.CER.Api.zip
+
+resources:
+  repositories:
+    - repository: CER_App
+      type: git
+      name: CER_APP
+      ref: refs/heads/develop
+
+stages:
+  - stage: BUILD
+    jobs:
+      - template: build-templates/api-build-jobs-template.yml
+        parameters:
+          pool: 
+            vmImage: 'windows-latest'
+          azureSubscription: AzureRM_US_AUDIT_PREPROD
+          buildConfiguration: Release
+          buildPlatform: AnyCPU
+          dotnetCoreProjects:
+            - job: ApiBuild
+              pool: 
+                vmImage: 'windows-latest'
+              variables:
+                repositoryName: CER_App
+                projectName: Deloitte.Assurance.CER.Api
+                artifactName: $(apiArtifactName)
+
+  - ${{ if eq(parameters.deploymentChannel, 'Hotfix Testing') }}:
+      - template: stage-templates/api-feature-stage-template.yml
+        parameters:
+          environmentIndex: ${{ variables.environmentIndex }}
+          apiAppServices:
+            navigatorApi:
+              artifactName: $(apiArtifactName)
+              resourceName: $(apiResourceName)
+              packageName: $(apiPackageName)
+
+  - ${{ if eq(parameters.deploymentChannel, 'Hotfix Release') }}:
+      - template: stage-templates/api-hotfix-stage-template.yml
+        parameters:
+          apiAppServices:
+            navigatorApi:
+              artifactName: $(apiArtifactName)
+              resourceName: $(apiResourceName)
+              packageName: $(apiPackageName)

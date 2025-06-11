@@ -1,0 +1,19 @@
+parameters:
+  - name: environmentIndex
+    type: string
+    default: ""
+  - name: geo
+    type: string
+    default: ""
+
+variables:
+  createDeveloperDbUser: false
+  deploySecondaryGeos: true
+  environment: int
+  environmentIndex: ${{ parameters.environmentIndex }}
+  environmentAlias: i$(environmentIndex)
+  primaryEnvironmentAlias: "i"
+  primaryEnvironmentName: "int"
+  secondaryEnvironmentAlias: "t"
+  secondaryEnvironmentName: "test"
+  functionAppNames: "QnA"

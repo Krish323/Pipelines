@@ -1,0 +1,75 @@
+parameters:
+  azureSubscription: ""
+  appServiceName: "$(environmentAlias)$(appName)appsvc$(resourceName)$(locationCode)"
+
+steps:
+  - checkout: none
+
+  - task: DownloadPipelineArtifact@2
+    displayName: "Download Infrastructure Artifact"
+    inputs:
+      artifactName: Infrastructure
+      path: $(Pipeline.Workspace)/Infrastructure
+
+  - task: DownloadPipelineArtifact@2
+    displayName: "Download Application Artifact"
+    inputs:
+      artifactName: $(artifactName)
+      path: $(Pipeline.Workspace)/Application
+
+  - task: PowerShell@2
+    displayName: 'Display Variables'
+    inputs:
+      targetType: inline
+      script: |
+        Get-ChildItem -Path env: | Where-Object { $_.Name -notmatch '(AGENT_.*|AZURE_.*|BUILD_.*|RELEASE_.*|SYSTEM_.*)' }
+        
+  - task: AzureAppServiceManage@0
+    displayName: "Stop ${{ parameters.appServiceName }}"
+    inputs:
+      azureSubscription: "${{ parameters.azureSubscription }}"
+      Action: "Stop Azure App Service"
+      WebAppName: "${{ parameters.appServiceName }}"
+
+  - task: ExtractFiles@1
+    displayName: 'Extract App Artifact - ${{ parameters.appServiceName }}'
+    inputs:
+      archiveFilePatterns: "$(Pipeline.Workspace)/Application/$(packageName)"
+      destinationFolder: "$(System.DefaultWorkingDirectory)/${{ parameters.appServiceName }}/Unzip"
+
+  - task: PowerShell@2
+    displayName: 'Set-ConfigFileForEnvironment - ${{ parameters.appServiceName }}'
+    inputs:
+      targetType: filePath
+      filePath: '$(Pipeline.Workspace)/Infrastructure/Scripts/Set-ConfigFileForEnvironment.ps1'
+      arguments: '-ArtifactFolder "$(System.DefaultWorkingDirectory)\${{ parameters.appServiceName }}\Unzip" -EnvironmentConfigPattern "config.$(geo).$(environment).js" -TargetConfigPattern "config.js"'
+
+  - task: replacetokens@6
+    displayName: 'Replace Tokens - ${{ parameters.appServiceName }}'
+    inputs:
+      sources: '**/config.js'
+      includeDotPaths: false
+      ifNoFilesFound: 'error'
+      missingVarLog: 'error'
+      missingVarAction: 'keep'
+      tokenPattern: 'doubleunderscores'
+      logLevel: 'warn'
+
+  - task: AzureRmWebAppDeployment@4
+    displayName: "Deploy Code in ${{ parameters.appServiceName }}"
+    inputs:
+      azureSubscription: "${{ parameters.azureSubscription }}"
+      appType: webApp
+      WebAppName: "${{ parameters.appServiceName }}"
+      Package: "$(System.DefaultWorkingDirectory)/${{ parameters.appServiceName }}/Unzip"
+      TakeAppOfflineFlag: true
+      UseWebDeploy: true
+      RemoveAdditionalFilesFlag: true
+      ExcludeFilesFromAppDataFlag: true
+
+  - task: AzureAppServiceManage@0
+    displayName: "Start ${{ parameters.appServiceName }}"
+    inputs:
+      azureSubscription: "${{ parameters.azureSubscription }}"
+      Action: "Start Azure App Service"
+      WebAppName: "${{ parameters.appServiceName }}"

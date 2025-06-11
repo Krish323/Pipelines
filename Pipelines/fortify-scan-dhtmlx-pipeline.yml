@@ -1,0 +1,49 @@
+trigger: none
+
+name: $(Date:yyyyMMdd)$(Rev:.r)
+
+resources:
+  repositories:
+    - repository: CER_DHTMLX
+      type: git
+      name: CER_DHTMLX
+      ref: refs/heads/develop
+
+stages:
+  - stage: FORTIFY_SCAN_DHTMLX
+    jobs:
+      - job: GetFortifyCredentials
+        pool: ASSURANCE-USE2-NPD-AKS-WIN-RELEASE
+        variables:
+          - template: variables-templates/npd-ame-variables-template.yml
+          - template: variables-templates/release-variables-template.yml
+        steps:
+          - template: build-templates\steps-templates\get-fortify-secrets-steps-template.yml
+            parameters:
+              azureSubscription: AzureRM_US_AUDIT_PREPROD
+
+      - job: FortifyScanDhtmlx
+        dependsOn: GetFortifyCredentials
+        pool: Levvia Preprod Build
+        variables:
+          - template: variables-templates/fortify-variables-template.yml
+          - name: scanCentralClientAuthToken
+            value: $[ dependencies.GetFortifyCredentials.outputs['fortifyAuthToken.scanCentralClientAuthToken'] ]
+          - name: scanCentralCiToken
+            value: $[ dependencies.GetFortifyCredentials.outputs['fortifyCiToken.scanCentralCiToken'] ]
+        steps:
+          - checkout: CER_DHTMLX
+
+          - task: fortifyvsts.hpe-security-fortify-vsts.build-task-fortify-scancentral-sast.FortifyScanCentralSAST@7
+            displayName: "Fortify Scan Dhtmlx"
+            inputs:
+              scanCentralCtrlUrl: "$(fortifyCtrlUrl)"
+              scanCentralClientToken: "$(scanCentralClientAuthToken)"
+              sscUrl: $(fortifySscUrl)"
+              sscCiToken: "$(scanCentralCiToken)"
+              uploadToSSC: true
+              applicationName: "$(fortifyAppName)"
+              applicationVersion: "GA-DHTMLX-CI48491660-Standalone-3.3.1-SAST"
+              buildTool: none
+              includeNodeModules: false
+              quiet: false

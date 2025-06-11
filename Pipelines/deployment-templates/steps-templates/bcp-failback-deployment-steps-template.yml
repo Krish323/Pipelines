@@ -1,0 +1,60 @@
+parameters:
+  azureSubscription: ""
+
+steps:
+  - task: AzurePowerShell@5
+    displayName: 'Failback: Stop App Services - Secondary'
+    inputs:
+      azureSubscription: '${{ parameters.azureSubscription }}'
+      ScriptPath: '$(Pipeline.Workspace)/Infrastructure/Scripts/Set-AppServiceState.ps1'
+      ScriptArguments: '-ResourceGroupName $(secondaryResourceGroupName) -Action "Stop"'
+      azurePowerShellVersion: LatestVersion
+
+  - task: AzurePowerShell@5
+    displayName: 'Failback: Stop App Services - Primary'
+    inputs:
+      azureSubscription: '${{ parameters.azureSubscription }}'
+      ScriptPath: '$(Pipeline.Workspace)/Infrastructure/Scripts/Set-AppServiceState.ps1'
+      ScriptArguments: '-ResourceGroupName $(primaryResourceGroupName) -Action "Stop"'
+      azurePowerShellVersion: LatestVersion
+
+  - task: AzurePowerShell@5
+    displayName: 'Failback: Scale Up App Service Plans - Primary'
+    inputs:
+      azureSubscription: '${{ parameters.azureSubscription }}'
+      ScriptPath: '$(Pipeline.Workspace)/Infrastructure/Scripts/Invoke-ScaleAppServicePlan.ps1'
+      ScriptArguments: '-ResourceGroupName $(primaryResourceGroupName) -Tier $(primaryAppServicePlanTier) -WorkerSize "Small" -ScaleUp'
+      azurePowerShellVersion: LatestVersion
+
+  - task: AzurePowerShell@5
+    displayName: 'Failback: Failover SQL Group'
+    inputs:
+      azureSubscription: '${{ parameters.azureSubscription }}'
+      ScriptType: FilePath
+      ScriptPath: '$(Pipeline.Workspace)/Infrastructure/Scripts/Invoke-SqlGroupFailover.ps1'
+      ScriptArguments: '-ResourceGroupName $(primaryResourceGroupName) -SqlServer $(primarySqlServerName) -FailoverGroupName $(sqlFailOverGroup)'
+      azurePowerShellVersion: LatestVersion 
+
+  - task: AzurePowerShell@5
+    displayName: 'Failback: Copy Secrets'
+    inputs:
+      azureSubscription: '${{ parameters.azureSubscription }}'
+      ScriptPath: '$(Pipeline.Workspace)/Infrastructure/Scripts/Copy-KeyVaultSecrets.ps1'
+      ScriptArguments: '-SourceKeyVaultName $(secondaryKeyVaultName) -DestinationKeyVaultName $(primaryKeyVaultName) -ExcludeSecrets $(excludeSecretsFromCopy)'
+      azurePowerShellVersion: LatestVersion
+
+  - task: AzurePowerShell@5
+    displayName: 'Failback: Start App Services - Primary'
+    inputs:
+      azureSubscription: '${{ parameters.azureSubscription }}'
+      ScriptPath: '$(Pipeline.Workspace)/Infrastructure/Scripts/Set-AppServiceState.ps1'
+      ScriptArguments: '-ResourceGroupName $(primaryResourceGroupName) -Action "Start"'
+      azurePowerShellVersion: LatestVersion
+
+  - task: AzurePowerShell@5
+    displayName: 'Failback: Scale Down App Service Plans - Secondary'
+    inputs:
+      azureSubscription: '${{ parameters.azureSubscription }}'
+      ScriptPath: '$(Pipeline.Workspace)/Infrastructure/Scripts/Invoke-ScaleAppServicePlan.ps1'
+      ScriptArguments: '-ResourceGroupName $(secondaryResourceGroupName) -Tier $(secondaryAppServicePlanTier) -WorkerSize "Small"'
+      azurePowerShellVersion: LatestVersion

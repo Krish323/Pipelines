@@ -1,0 +1,36 @@
+parameters:
+  azureSubscription: ""
+  teardownResourceGroup: false
+ 
+steps:
+  - task: AzurePowerShell@5
+    condition: ${{ parameters.teardownResourceGroup }}
+    displayName: 'Delete Resource Group - $(geo) - $(environmentFullName)'
+    retryCountOnTaskFailure: 5
+    inputs:
+      azureSubscription: '${{ parameters.azureSubscription }}'
+      ScriptType: FilePath
+      ScriptPath: '$(Pipeline.Workspace)/Infrastructure/Scripts/Remove-ResourceGroup.ps1'
+      ScriptArguments: '-ResourceGroupName ''$(resourceGroupName)'''
+      azurePowerShellVersion: LatestVersion
+
+  - task: AzurePowerShell@5
+    condition: not(${{ parameters.teardownResourceGroup }})
+    displayName: 'Delete Azure Resources - $(geo) - $(environmentFullName)'
+    retryCountOnTaskFailure: 5
+    inputs:
+      azureSubscription: '${{ parameters.azureSubscription }}'
+      ScriptType: FilePath
+      ScriptPath: '$(Pipeline.Workspace)/Infrastructure/Scripts/Remove-AzResources.ps1'
+      ScriptArguments: '-ResourceGroupName ''$(resourceGroupName)'' -ProtectedResourceTypeList ''$(protectedResourceTypeList)'' -ProtectInternalPrivateEndpoints'
+      azurePowerShellVersion: LatestVersion
+
+  - task: AzurePowerShell@5
+    condition: not(${{ parameters.teardownResourceGroup }})
+    displayName: 'Update Geo TM Target - $(geo) - $(environmentFullName)'
+    inputs:
+      azureSubscription: '${{ parameters.azureSubscription }}'
+      ScriptType: FilePath
+      ScriptPath: '$(Pipeline.Workspace)/Infrastructure/Scripts/Set-TrafficManagerEndpointTarget.ps1'
+      ScriptArguments: '-ResourceGroupName ''$(resourceGroupName)'' -TrafficManagerName ''$(geoTrafficManagerName)'' -EndpointName ''$(primaryEndpoint)'' -EndpointTarget ''$(maintenancePageVipDnsName)'''
+      azurePowerShellVersion: LatestVersion

@@ -1,0 +1,64 @@
+trigger: none
+
+name: $(Date:yyyyMMdd)$(Rev:.r)
+
+parameters:
+  - name: deploymentChannel
+    displayName: Deployment channel
+    type: string
+    default: Feature Release
+    values:
+      - Feature Testing
+      - Feature Release
+
+variables:
+  environmentIndex: "1"
+  pipelineId: 9701
+  apiArtifactName: navigatorApi
+  apiResourceName: api
+  apiPackageName: Deloitte.Assurance.CER.Api.zip
+
+resources:
+  repositories:
+    - repository: CER_App
+      type: git
+      name: CER_APP
+      ref: refs/heads/develop
+
+stages:
+  - stage: BUILD
+    jobs:
+      - template: build-templates/api-build-jobs-template.yml
+        parameters:
+          pool: 
+            vmImage: 'windows-latest'
+          azureSubscription: AzureRM_US_AUDIT_PREPROD
+          buildConfiguration: Release
+          buildPlatform: AnyCPU
+          dotnetCoreProjects:
+            - job: ApiBuild
+              pool: 
+                vmImage: 'windows-latest'
+              variables:
+                repositoryName: CER_App
+                projectName: Deloitte.Assurance.CER.Api
+                artifactName: $(apiArtifactName)
+
+  - ${{ if and(eq(parameters.deploymentChannel, 'Feature Testing'), ne(variables['System.DefinitionId'], variables.pipelineId)) }}:
+      - template: stage-templates/api-feature-stage-template.yml
+        parameters:
+          environmentIndex: ${{ variables.environmentIndex }}
+          apiAppServices:
+            navigatorApi:
+              artifactName: $(apiArtifactName)
+              resourceName: $(apiResourceName)
+              packageName: $(apiPackageName)
+
+  - ${{ if and(eq(parameters.deploymentChannel, 'Feature Release'), eq(variables['System.DefinitionId'], variables.pipelineId)) }}:
+      - template: stage-templates/api-release-stage-template.yml
+        parameters:
+          apiAppServices:
+            navigatorApi:
+              artifactName: $(apiArtifactName)
+              resourceName: $(apiResourceName)
+              packageName: $(apiPackageName)

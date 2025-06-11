@@ -1,0 +1,61 @@
+parameters:
+  azureSubscription: ""
+  databaseName: ""
+  fileName: ""
+  isContainerDb: false
+
+steps:
+  - checkout: none
+
+  - task: DownloadPipelineArtifact@2
+    displayName: "Download Infrastructure Artifact"
+    inputs:
+      artifactName: Infrastructure
+      path: $(Pipeline.Workspace)/Infrastructure
+
+  - task: DownloadPipelineArtifact@2
+    displayName: "Downloading Application Artifact"
+    inputs:
+      path: $(Pipeline.Workspace)/Application
+      artifactName: $(artifactName)
+
+  - task: AzurePowerShell@4
+    displayName: "Get Sql Server Credentials"
+    inputs:
+      azureSubscription: "${{ parameters.azureSubscription }}"
+      ScriptPath: "$(Pipeline.Workspace)/Infrastructure/PipelineScripts/Set-SecretAsPipelineVariable.ps1"
+      ScriptArguments: '-KeyVaultName ''$(deployKeyVaultName)'' -SecretName ''$(dBAdminPasswordSecretName)'' -VariableName ''deployUserPassword'''
+      azurePowerShellVersion: LatestVersion
+
+  - task: PowerShell@2
+    displayName: 'Display Variables'
+    inputs:
+      targetType: inline
+      script: |
+        Get-ChildItem -Path env: | Where-Object { $_.Name -notmatch '(AGENT_.*|AZURE_.*|BUILD_.*|RELEASE_.*|SYSTEM_.*)' }
+        
+  - task: SqlAzureDacpacDeployment@1
+    displayName: "Deploy ${{ parameters.fileName }} DAPAC file"
+    condition: and(succeeded(), eq('${{ parameters.isContainerDb }}', false))
+    inputs:
+      azureSubscription: "${{ parameters.azureSubscription }}"
+      DacpacFile: "$(Pipeline.Workspace)/Application/${{ parameters.fileName }}.dacpac"
+      deployType: DacpacTask
+      ServerName: "$(sqlServerName).database.windows.net"
+      DatabaseName: "${{ parameters.databaseName }}"
+      SqlUsername: "$(dbAdminLoginName)"
+      SqlPassword: "$(deployUserPassword)"
+      AdditionalArguments: '/p:ScriptDatabaseOptions=False /p:BlockOnPossibleDataLoss=False /p:ExcludeObjectTypes="Logins;Routes;ServerRoleMembership;ServerRoles;Users;DatabaseRoles;RoleMembership;Permissions"'
+
+  - task: SqlAzureDacpacDeployment@1
+    displayName: "Deploy ${{ parameters.fileName }} DAPAC file"
+    condition: and(succeeded(), eq('${{ parameters.isContainerDb }}', true))
+    inputs:
+      azureSubscription: "${{ parameters.azureSubscription }}"
+      DacpacFile: "$(Pipeline.Workspace)/Application/${{ parameters.fileName }}.dacpac"
+      deployType: DacpacTask
+      ServerName: "$(sqlServerName).database.windows.net"
+      DatabaseName: "$(databaseName)"
+      SqlUsername: "$(dbAdminLoginName)"
+      SqlPassword: "$(deployUserPassword)"
+      AdditionalArguments: '/p:ScriptDatabaseOptions=False /p:BlockOnPossibleDataLoss=False /p:ExcludeObjectTypes="Logins;Routes;ServerRoleMembership;ServerRoles;Users;DatabaseRoles;RoleMembership;Permissions"'

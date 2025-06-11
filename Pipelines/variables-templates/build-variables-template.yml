@@ -1,0 +1,4 @@
+variables:
+  buildConfiguration: release
+  buildPlatform: any cpu
+  vstsFeed: '9742bf8b-0208-4a5c-b127-6fdb446ad826'

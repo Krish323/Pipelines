@@ -1,0 +1,446 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "appName": {
+            "type": "string",
+            "metadata": {
+                "description": "Application name used in resource names."
+            }
+        },
+        "environment": {
+            "type": "string",
+            "metadata": {
+                "description": "Environment resources are being deployed for (e.g. dev, qa, etc.)"
+            },
+            "allowedValues": [
+                "bcp",
+                "dev",
+                "int",
+                "load",
+                "npd",
+                "poc",
+                "prod",
+                "qa",
+                "sbx",
+                "stage",
+                "sys",
+                "test",
+                "uat",
+                "val"
+            ]
+        },
+        "environmentIndex": {
+            "type": "string",
+            "metadata": {
+                "description": "Alphanumeric index that will be added to Environment Alias."
+            },
+            "defaultValue": ""
+        },
+        "location": {
+            "type": "string",
+            "metadata": {
+                "description": "Geographical location where resources reside."
+            },
+            "allowedValues": [
+                "northeurope",
+                "westeurope",
+                "japaneast",
+                "japanwest",
+                "centralus",
+                "eastus2"
+            ],
+            "defaultValue": "[resourceGroup().location]"
+        },
+        "locationCode": {
+            "type": "string",
+            "metadata": {
+                "description": "Geographical location where primary server resources reside."
+            },
+            "allowedValues": [
+                "eun",
+                "euw",
+                "jpe",
+                "jpw",
+                "usc",
+                "use2"
+            ]
+        },
+        "dbActiveDirectoryAdminLogin": {
+            "type": "string",
+            "metadata": {
+                "description": "For Database AD Admin Login"
+            }
+        },
+        "dbActiveDirectoryAdminSid": {
+            "type": "string",
+            "metadata": {
+                "description": "For Database AD Admin ID"
+            }
+        },
+        "dbActiveDirectoryAdminTenantId": {
+            "type": "string",
+            "metadata": {
+                "description": "For Database AD Admin Tenant ID"
+            }
+        },
+        "dbAdminLoginName": {
+            "type": "string",
+            "metadata": {
+                "description": "Name for database admin account"
+            }
+        },
+        "dbAdminLoginPwd": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Password for database admin account"
+            }
+        },
+        "dbBackupRetentionDays": {
+            "type": "int",
+            "defaultValue": 7,
+            "maxValue": 35,
+            "minValue": 1
+        },
+        "dbContainerNames": {
+            "type": "array",
+            "metadata": {
+                "description": "List of Database Names"
+            },
+            "defaultValue": []
+        },
+        "dbEdition": {
+            "type": "string",
+            "defaultValue": "GeneralPurpose"
+        },
+        "dbMaxSizeBytes": {
+            "type": "int",
+            "defaultValue": 107374182400
+        },
+        "dbPartnerEnvironment": {
+            "type": "string",
+            "metadata": {
+                "description": "Environment of the Source Database."
+            },
+            "allowedValues": [
+                "bcp",
+                "dev",
+                "int",
+                "load",
+                "npd",
+                "poc",
+                "prod",
+                "qa",
+                "sbx",
+                "stage",
+                "sys",
+                "test",
+                "uat",
+                "val"
+            ],
+            "defaultValue": "[parameters('environment')]"
+        },
+        "dbPartnerLocationCode": {
+            "type": "string",
+            "metadata": {
+                "description": "Geographical location where the partner database resides."
+            },
+            "allowedValues": [
+                "eun",
+                "euw",
+                "jpe",
+                "jpw",
+                "usc",
+                "use2"
+            ],
+            "defaultValue": "[parameters('locationCode')]"
+        },
+        "elasticPoolSku": {
+            "type": "object",
+            "metadata": {
+                "description": "ElasticPool SKU Description object"
+            },
+            "defaultValue": {
+                "name": "GP_Gen5",
+                "tier": "GeneralPurpose",
+                "family": "Gen5",
+                "capacity": 2
+            }
+        },
+        "elasticPoolMaxSizeBytes": {
+            "type": "int",
+            "metadata": {
+                "description": "The storage limit for the database elastic pool in bytes"
+            },
+            "defaultValue": 107374182400
+        },
+        "elasticPoolMinCapacity": {
+            "type": "int",
+            "metadata": {
+                "description": "The minimum capacity all databases are guaranteed"
+            },
+            "defaultValue": 0
+        },
+        "elasticPoolMaxCapacity": {
+            "type": "int",
+            "metadata": {
+                "description": "The maximum capacity any one database can consume"
+            },
+            "defaultValue": 2
+        },
+        "vnetFirewallRules": {
+            "type": "array",
+            "metadata": {
+                "description": "Object array, containing Resource Group, VNet, & Subnet Name, that should be granted access to resources with firewalls"
+            },
+            "defaultValue": []
+        },
+        "nonProdIpFirewallRules": {
+            "type": "array",
+            "metadata": {
+                "description": "Object array, containing name, cidr, startIpAddress, endIpAddress, that should be granted access to non-prod resources with firewalls"
+            },
+            "defaultValue": []
+        },
+        "dbThreatDetectionAlertEmails": {
+            "type": "array",
+            "metadata": {
+                "description": "Object array, containing the email list where all the SQL threat should be notify."
+            },
+            "defaultValue": [
+                "aapssecops@deloitte.com"
+            ]
+        }
+    },
+    "variables": {
+        "batchSizeCount": "[if(greater(length(parameters('dbContainerNames')), 30), div(length(parameters('dbContainerNames')), 3), length(parameters('dbContainerNames')))]",
+        "elasticPoolName": "[if(not(variables('isBcpEnvironment')), concat(variables('sqlServerName'),'-pool'),concat(variables('partnerDatabaseServerName'),'-pool'))]",
+        "elasticPoolResourceName": "[concat(variables('sqlServerName'),'/',variables('elasticPoolName'))]",
+        "elasticPoolResourceId": "[resourceId('Microsoft.Sql/servers/elasticPools',variables('sqlServerName'),variables('elasticPoolName'))]",
+        "isBcpEnvironment": "[or(startsWith(parameters('Environment'), 'BCP'), startsWith(parameters('Environment'), 'TEST'))]",
+        "isNonProdEnvironment": "[not(or(startsWith(parameters('environment'), 'STAGE'), startsWith(parameters('environment'), 'PROD'), startsWith(parameters('environment'), 'BCP'), startsWith(parameters('environment'), 'INT'), startsWith(parameters('environment'), 'TEST')))]",
+        "isProdEnvironment": "[or(startsWith(parameters('Environment'), 'PROD'), startsWith(parameters('Environment'), 'INT'))]",
+        "rootName": "[toLower(concat(first(parameters('environment')), parameters('environmentIndex'), parameters('appName')))]",
+        "partnerDatabaseResourceGroup": "[toupper(format('AZRG-{0}-AUD-{1}-{2}{3}', parameters('dbPartnerLocationCode'), parameters('appName'), parameters('dbPartnerEnvironment'), parameters('environmentIndex')))]",
+        "partnerDatabaseServerName": "[toLower(concat(first(parameters('dbPartnerEnvironment')), parameters('environmentIndex'), parameters('appName'), 'sql', parameters('dbPartnerLocationCode')))]",
+        "resourceIdVNetNameIndex": 8,
+        "resourceIdSubnetNameIndex": 10,
+        "sqlFailOverGroupName": "[toLower(concat(variables('sqlServerName'), '-failover-group'))]",
+        "sqlFailOverGroupResourceName": "[concat(variables('sqlServerName'),'/',variables('sqlFailOverGroupName'))]",
+        "sqlServerName": "[toLower(concat(variables('rootName'), 'sql', parameters('locationCode')))]",
+        "copy": [
+            {
+                "name": "failOverDatabases",
+                "count": "[length(parameters('dbContainerNames'))]",
+                "condition": "[variables('isBcpEnvironment')]",
+                "input": "[resourceId('Microsoft.Sql/servers/databases', variables('sqlServerName'), parameters('dbContainerNames')[copyIndex('failOverDatabases')])]"
+            }
+        ]
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Sql/servers",
+            "name": "[variables('sqlServerName')]",
+            "apiVersion": "2020-08-01-preview",
+            "location": "[parameters('location')]",
+            "properties": {
+                "administratorLogin": "[parameters('dbAdminLoginName')]",
+                "administratorLoginPassword": "[parameters('dbAdminLoginPwd')]",
+                "minimalTlsVersion": "1.2",
+                "version": "12.0"
+            },
+            "resources": [
+                {
+                    "type": "administrators",
+                    "name": "ActiveDirectory",
+                    "apiVersion": "2020-08-01-preview",
+                    "properties": {
+                        "administratorType": "ActiveDirectory",
+                        "login": "[parameters('dbActiveDirectoryAdminLogin')]",
+                        "sid": "[parameters('dbActiveDirectoryAdminSid')]",
+                        "tenantId": "[parameters('dbActiveDirectoryAdminTenantId')]"
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Sql/servers', variables('sqlServerName'))]"
+                    ]
+                },
+                {
+                    "type": "securityAlertPolicies",
+                    "name": "DefaultSecurityAlert",
+                    "apiVersion": "2020-08-01-preview",
+                    "properties": {
+                        "state": "Enabled",
+                        "disabledAlerts": [],
+                        "emailAccountAdmins": true,
+                        "emailAddresses": "[parameters('dbThreatDetectionAlertEmails')]"
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Sql/servers', variables('sqlServerName'))]"
+                    ]
+                },
+                {
+                    "type": "firewallrules",
+                    "name": "AllowAllAzureServices",
+                    "apiVersion": "2020-11-01-preview",
+                    "properties": {
+                        "startIpAddress": "0.0.0.0",
+                        "endIpAddress": "0.0.0.0"
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Sql/servers', variables('sqlServerName'))]"
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "[concat(variables('sqlServerName'), '/', parameters('nonProdIpFirewallRules')[copyIndex()].name)]",
+            "type": "Microsoft.Sql/servers/firewallRules",
+            "apiVersion": "2020-11-01-preview",
+            "condition": "[variables('isNonProdEnvironment')]",
+            "copy": {
+                "name": "nonProdFirewallRulesCopy",
+                "count": "[length(parameters('nonProdIpFirewallRules'))]",
+                "mode": "parallel"
+            },
+            "properties": {
+                "startIpAddress": "[parameters('nonProdIpFirewallRules')[copyIndex()].startIpAddress]",
+                "endIpAddress": "[parameters('nonProdIpFirewallRules')[copyIndex()].endIpAddress]"
+            },
+            "dependsOn": [
+                "[variables('sqlServerName')]"
+            ]
+        },
+        {
+            "name": "[concat(variables('sqlServerName'), '/', split(parameters('vnetFirewallRules')[copyIndex()], '/')[variables('resourceIdVNetNameIndex')], '_', split(parameters('vnetFirewallRules')[copyIndex()], '/')[variables('resourceIdSubnetNameIndex')])]",
+            "type": "Microsoft.Sql/servers/virtualNetworkRules",
+            "apiVersion": "2020-11-01-preview",
+            "condition": "[greater(length(parameters('vnetFirewallRules')), 0)]",
+            "copy": {
+                "name": "virtualNetworkRuleCopy",
+                "count": "[length(parameters('vnetFirewallRules'))]",
+                "mode": "parallel"
+            },
+            "properties": {
+                "virtualNetworkSubnetId": "[parameters('vnetFirewallRules')[copyIndex()]]",
+                "ignoreMissingVnetServiceEndpoint": true
+            },
+            "dependsOn": [
+                "[variables('sqlServerName')]"
+            ]
+        },
+        {
+            "type": "Microsoft.Sql/servers/elasticPools",
+            "apiVersion": "2020-08-01-preview",
+            "name": "[variables('elasticPoolResourceName')]",
+            "location": "[parameters('location')]",
+            "sku": {
+                "name": "[parameters('elasticPoolSku').name]",
+                "tier": "[parameters('elasticPoolSku').tier]",
+                "family": "[parameters('elasticPoolSku').family]",
+                "capacity": "[parameters('elasticPoolSku').capacity]"
+            },
+            "properties": {
+                "maxSizeBytes": "[parameters('elasticPoolMaxSizeBytes')]",
+                "perDatabaseSettings": {
+                    "minCapacity": "[parameters('elasticPoolMinCapacity')]",
+                    "maxCapacity": "[parameters('elasticPoolMaxCapacity')]"
+                },
+                "licenseType": "BasePrice"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Sql/servers', variables('sqlServerName'))]",
+                "[resourceid('Microsoft.Sql/servers/securityAlertPolicies', variables('sqlServerName'), 'DefaultSecurityAlert')]"
+            ]
+        },
+        {
+            "type": "Microsoft.Sql/servers/databases",
+            "condition": "[not(variables('isBcpEnvironment'))]",
+            "name": "[concat(variables('sqlServerName'), '/', parameters('dbContainerNames')[copyIndex()])]",
+            "apiVersion": "2020-08-01-preview",
+            "location": "[parameters('location')]",
+            "copy": {
+                "mode": "Serial",
+                "batchSize": "[variables('batchSizeCount')]",
+                "name": "dbContainerCopy",
+                "count": "[length(parameters('dbContainerNames'))]"
+            },
+            "properties": {
+                "createMode": "default",
+                "edition": "[parameters('dbEdition')]",
+                "status": "Online",
+                "collation": "SQL_Latin1_General_CP1_CI_AS",
+                "maxSizeBytes": "[parameters('dbMaxSizeBytes')]",
+                "elasticPoolId": "[variables('elasticPoolResourceId')]",
+                "licenseType": "BasePrice"
+            },
+            "resources": [
+                {
+                    "name": "default",
+                    "condition": "[not(variables('isBcpEnvironment'))]",
+                    "type": "backupShortTermRetentionPolicies",
+                    "apiVersion": "2020-08-01-preview",
+                    "properties": {
+                        "retentionDays": "[parameters('dbBackupRetentionDays')]"
+                    },
+                    "dependsOn": [
+                        "[parameters('dbContainerNames')[copyIndex()]]"
+                    ]
+                },
+                {
+                    "type": "transparentDataEncryption",
+                    "name": "current",
+                    "condition": "[not(variables('isBcpEnvironment'))]",
+                    "apiVersion": "2017-03-01-preview",
+                    "properties": {
+                        "status": "Enabled"
+                    },
+                    "dependsOn": [
+                        "[parameters('dbContainerNames')[copyIndex()]]",
+                        "[resourceid('Microsoft.Sql/servers/databases/backupShortTermRetentionPolicies', variables('sqlServerName'), parameters('dbContainerNames')[copyIndex()], 'default')]"
+                    ]
+                },
+                {
+                    "name": "Microsoft.Authorization/CannotDelete",
+                    "condition": "[not(variables('isBcpEnvironment'))]",
+                    "type": "providers/locks",
+                    "apiVersion": "2017-04-01",
+                    "properties": {
+                        "level": "CannotDelete"
+                    },
+                    "dependsOn": [
+                        "[parameters('dbContainerNames')[copyindex()]]",
+                        "[resourceid('Microsoft.Sql/servers/databases/transparentDataEncryption', variables('sqlServerName'), parameters('dbContainerNames')[copyIndex()], 'current')]"
+                    ]
+                }
+            ],
+            "dependsOn": [
+                "[variables('elasticPoolResourceId')]"
+            ]
+        },
+        {
+            "condition": "[variables('isProdEnvironment')]",
+            "type": "Microsoft.Sql/servers/failoverGroups",
+            "apiVersion": "2021-11-01-preview",
+            "name": "[variables('sqlFailOverGroupResourceName')]",
+            "properties": {
+                "serverName": "[variables('sqlServerName')]",
+                "partnerServers": [
+                    {
+                        "id": "[resourceId(variables('partnerDatabaseResourceGroup'),'Microsoft.Sql/servers',variables('partnerDatabaseServerName'))]"
+                    }
+                ],
+                "readWriteEndpoint": {
+                    "failoverPolicy": "Manual"
+                },
+                "readOnlyEndpoint": {
+                    "failoverPolicy": "Enabled"
+                },
+                "databases": "[variables('failOverDatabases')]"
+            },
+            "dependsOn": [
+                "dbContainerCopy",
+                "[resourceId('Microsoft.Sql/servers', variables('sqlServerName'))]"
+            ]
+        }
+    ]
+}

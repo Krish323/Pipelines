@@ -1,0 +1,76 @@
+parameters:
+  - name: environmentIndex
+    type: string
+
+stages:
+  - stage: EMA_DEV_${{ parameters.environmentIndex }}
+    dependsOn: BUILD
+    jobs:
+      - deployment: EMA_DEV
+        environment: APPLICATION_DEV
+        pool: ASSURANCE-EUW-NPD-AKS-WIN-RELEASE
+      - template: ../deployment-templates/db-deployment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-EUW-NPD-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_EMA_AUDIT_PREPROD
+          geo: ema
+          environment: dev
+          environmentIndex: ${{ parameters.environmentIndex }}
+          lifecycle: npd
+          isPrimaryGeo: true
+          containerDacpacFileName: $(containerDacpacFileName)
+          masterDacpacFileName: $(masterDacpacFileName)
+          caseMasterDacpacFileName: $(caseMasterDacpacFileName)
+
+  - stage: EMA_QA_${{ parameters.environmentIndex }}
+    dependsOn: EMA_DEV_${{ parameters.environmentIndex }}
+    jobs:
+      - deployment: EMA_QA
+        environment: APPLICATION_QA
+        pool: ASSURANCE-EUW-NPD-AKS-WIN-RELEASE
+      - template: ../deployment-templates/db-deployment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-EUW-NPD-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_EMA_AUDIT_PREPROD
+          geo: ema
+          environment: qa
+          environmentIndex: ${{ parameters.environmentIndex }}
+          lifecycle: npd
+          isPrimaryGeo: true
+          containerDacpacFileName: $(containerDacpacFileName)
+          masterDacpacFileName: $(masterDacpacFileName)
+          caseMasterDacpacFileName: $(caseMasterDacpacFileName)
+
+  - stage: AME_QA_${{ parameters.environmentIndex }}
+    dependsOn: BUILD
+    jobs:
+      - deployment: AME_QA
+        environment: APPLICATION_QA
+        pool: ASSURANCE-USE2-NPD-AKS-WIN-RELEASE
+      - template: ../deployment-templates/db-deployment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-USE2-NPD-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_US_AUDIT_PREPROD
+          geo: ame
+          environment: qa
+          environmentIndex: ${{ parameters.environmentIndex }}
+          lifecycle: npd
+          containerDacpacFileName: $(containerDacpacFileName)
+          caseMasterDacpacFileName: $(caseMasterDacpacFileName)
+
+  - stage: APA_QA_${{ parameters.environmentIndex }}
+    dependsOn: BUILD
+    jobs:
+      - deployment: APA_QA
+        environment: APPLICATION_QA
+        pool: ASSURANCE-JPE-NPD-AKS-WIN-RELEASE
+      - template: ../deployment-templates/db-deployment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-JPE-NPD-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_APA_AUDIT_PREPROD
+          geo: apa
+          environment: qa
+          environmentIndex: ${{ parameters.environmentIndex }}
+          lifecycle: npd
+          containerDacpacFileName: $(containerDacpacFileName)
+          caseMasterDacpacFileName: $(caseMasterDacpacFileName)

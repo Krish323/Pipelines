@@ -1,0 +1,56 @@
+parameters:
+  pool: null
+  azureSubscription: ""
+  geo: ""
+  environmentIndex: ""
+  environment: ""
+  lifecycle: ""
+  isPrimaryGeo: false
+  apiAppServices: []
+
+jobs:
+  - job: ApiDeployment
+    workspace:
+      clean: all
+    pool: ${{ parameters.pool }}
+    variables:
+      - template: ../variables-templates/${{ parameters.environment }}-variables-template.yml
+        parameters:
+          environmentIndex: ${{ parameters.environmentIndex }}
+      - template: ../variables-templates/${{ parameters.lifecycle }}-${{ parameters.geo }}-variables-template.yml
+      - template: ../variables-templates/${{ parameters.geo }}-variables-template.yml
+      - template: ../variables-templates/release-variables-template.yml
+        parameters:
+          environment: ${{ parameters.environment }}
+          isPrimaryGeo: ${{ parameters.isPrimaryGeo }}
+      - template: ../variables-templates/cekvault-variables-template.yml
+        parameters:
+          geo: ${{ parameters.geo }}
+          environment: ${{ parameters.environment }}
+    strategy:
+      matrix: "${{ parameters.apiAppServices }}"
+    steps:
+      - template: steps-templates/dot-net-core-app-service-deployment-steps-template.yml
+        parameters:
+          azureSubscription: "${{ parameters.azureSubscription }}"
+
+  - job: PipelineExecutionRetention
+    condition: and(succeeded(), in(lower('${{ parameters.environment }}'), 'prod', 'bcp'))
+    dependsOn: ApiDeployment
+    workspace:
+      clean: all
+    pool: ${{ parameters.pool }}
+    steps:
+      - checkout: none
+      - task: DownloadPipelineArtifact@2
+        displayName: "Download Infrastructure Artifact"
+        inputs:
+          artifactName: Infrastructure
+          path: $(Pipeline.Workspace)/Infrastructure
+      
+      - task: PowerShell@2
+        displayName: 'Update Production Pipeline Execution Retention'
+        inputs:        
+          targetType: filePath
+          filePath: '$(Pipeline.Workspace)/Infrastructure/PipelineScripts/Set-PipelineRetentionPolicy.ps1'
+          arguments: '-AccessToken "Bearer $(System.AccessToken)" -DefinitionId "$(System.DefinitionId)" -OwnerId "User:$(Build.RequestedForId)" -RunId "$(Build.BuildId)" -CollectionUri "$(System.CollectionUri)" -TeamProject "$(System.TeamProject)"'

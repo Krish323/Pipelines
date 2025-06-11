@@ -1,0 +1,212 @@
+trigger: none
+
+name: $(Date:yyyyMMdd)$(Rev:.r)
+
+parameters:
+  - name: isAmeBcpPrimaryEnvironment
+    displayName: AME BCP is Primary Environment
+    type: boolean
+    default: false
+  - name: isEmaBcpPrimaryEnvironment
+    displayName: EMA BCP is Primary Environment
+    type: boolean
+    default: false
+  - name: isApaBcpPrimaryEnvironment
+    displayName: APA BCP is Primary Environment
+    type: boolean
+    default: false
+
+variables:
+  ${{ if parameters.isAmeBcpPrimaryEnvironment }}:
+    activeTrafficManagerEndpointNameAme: bcplocation
+    activeAvailabilityTestLocationAme: Secondary
+  ${{ else }}:
+    activeTrafficManagerEndpointNameAme: primarylocation
+    activeAvailabilityTestLocationAme: Primary
+
+  ${{ if parameters.isEmaBcpPrimaryEnvironment }}:
+    activeTrafficManagerEndpointNameEma: bcplocation
+    activeAvailabilityTestLocationEma: Secondary
+  ${{ else }}:
+    activeTrafficManagerEndpointNameEma: primarylocation
+    activeAvailabilityTestLocationEma: Primary
+
+  ${{ if parameters.isApaBcpPrimaryEnvironment }}:
+    activeTrafficManagerEndpointNameApa: bcplocation
+    activeAvailabilityTestLocationApa: Secondary
+  ${{ else }}:
+    activeTrafficManagerEndpointNameApa: primarylocation
+    activeAvailabilityTestLocationApa: Primary
+
+stages:
+- stage: BUILD
+  jobs:
+    - template: build-templates/infrastructure-build-jobs-template.yml
+
+- stage: AME_Show_Maintenance_Page
+  dependsOn: BUILD
+  jobs:
+    - deployment: AME_Show_Maintenance_Page
+      environment: INFRASTRUCTURE_PROD_AME
+      pool: ASSURANCE-USE2-PROD-AKS-WIN-RELEASE
+    - template: deployment-templates/availability-test-state-deployment-jobs-template.yml
+      parameters:
+        pool: ASSURANCE-USE2-PROD-AKS-WIN-RELEASE
+        azureSubscription: AzureRM_US_AUDIT_PROD
+        geo: ame
+        lifecycle: prod
+        environment: prod
+        enableAvailabilityTests: false
+        environmentsToProcess: Both
+    - template: deployment-templates/maintenance-page-show-hide-deployment-jobs-template.yml
+      parameters:
+        pool: ASSURANCE-USE2-PROD-AKS-WIN-RELEASE
+        azureSubscription: AzureRM_US_AUDIT_PROD
+        geo: ame
+        lifecycle: prod
+        environment: prod
+        dependsOn: AvailabilityTestEnablement
+        endpointName: maintenancepage
+
+- stage: AME_Hide_Maintenance_Page
+  dependsOn: AME_Show_Maintenance_Page
+  jobs:
+    - deployment: AME_Hide_Maintenance_Page
+      environment: INFRASTRUCTURE_PROD_AME
+      pool: ASSURANCE-USE2-PROD-AKS-WIN-RELEASE
+    - template: deployment-templates/maintenance-page-show-hide-deployment-jobs-template.yml
+      parameters:
+        pool: ASSURANCE-USE2-PROD-AKS-WIN-RELEASE
+        azureSubscription: AzureRM_US_AUDIT_PROD
+        geo: ame
+        lifecycle: prod
+        environment: prod
+        endpointName: ${{ variables.activeTrafficManagerEndpointNameAme }}
+
+- stage: AME_Start_Availability_Tests
+  dependsOn: AME_Hide_Maintenance_Page
+  jobs:
+    - deployment: AME_Start_Availability_Tests
+      environment: INFRASTRUCTURE_PROD_AME
+      pool: ASSURANCE-USE2-PROD-AKS-WIN-RELEASE
+    - template: deployment-templates/availability-test-state-deployment-jobs-template.yml
+      parameters:
+        pool: ASSURANCE-USE2-PROD-AKS-WIN-RELEASE
+        azureSubscription: AzureRM_US_AUDIT_PROD
+        geo: ame
+        lifecycle: prod
+        environment: prod
+        enableAvailabilityTests: true
+        environmentsToProcess: ${{ variables.activeAvailabilityTestLocationAme }}
+
+- stage: EMA_Show_Maintenance_Page
+  dependsOn: BUILD
+  jobs:
+    - deployment: EMA_Show_Maintenance_Page
+      environment: INFRASTRUCTURE_PROD_EMA
+      pool: ASSURANCE-EUW-PROD-AKS-WIN-RELEASE
+    - template: deployment-templates/availability-test-state-deployment-jobs-template.yml
+      parameters:
+        pool: ASSURANCE-EUW-PROD-AKS-WIN-RELEASE
+        azureSubscription: AzureRM_EMA_AUDIT_PROD
+        geo: ema
+        lifecycle: prod
+        environment: prod
+        enableAvailabilityTests: false
+        environmentsToProcess: Both
+    - template: deployment-templates/maintenance-page-show-hide-deployment-jobs-template.yml
+      parameters:
+        pool: ASSURANCE-EUW-PROD-AKS-WIN-RELEASE
+        azureSubscription: AzureRM_EMA_AUDIT_PROD
+        geo: ema
+        lifecycle: prod
+        environment: prod
+        dependsOn: AvailabilityTestEnablement
+        endpointName: maintenancepage
+
+- stage: EMA_Hide_Maintenance_Page
+  dependsOn: EMA_Show_Maintenance_Page
+  jobs:
+    - deployment: EMA_Hide_Maintenance_Page
+      environment: INFRASTRUCTURE_PROD_EMA
+      pool: ASSURANCE-EUW-PROD-AKS-WIN-RELEASE
+    - template: deployment-templates/maintenance-page-show-hide-deployment-jobs-template.yml
+      parameters:
+        pool: ASSURANCE-EUW-PROD-AKS-WIN-RELEASE
+        azureSubscription: AzureRM_EMA_AUDIT_PROD
+        geo: ema
+        lifecycle: prod
+        environment: prod
+        endpointName: ${{ variables.activeTrafficManagerEndpointNameEma }}
+  
+- stage: EMA_Start_Availability_Tests
+  dependsOn: EMA_Hide_Maintenance_Page
+  jobs:
+    - deployment: EMA_Start_Availability_Tests
+      environment: INFRASTRUCTURE_PROD_EMA
+      pool: ASSURANCE-EUW-PROD-AKS-WIN-RELEASE
+    - template: deployment-templates/availability-test-state-deployment-jobs-template.yml
+      parameters:
+        pool: ASSURANCE-EUW-PROD-AKS-WIN-RELEASE
+        azureSubscription: AzureRM_EMA_AUDIT_PROD
+        geo: ema
+        lifecycle: prod
+        environment: prod
+        enableAvailabilityTests: true
+        environmentsToProcess: ${{ variables.activeAvailabilityTestLocationEma }}
+
+- stage: APA_Show_Maintenance_Page
+  dependsOn: BUILD
+  jobs:
+    - deployment: APA_Show_Maintenance_Page
+      environment: INFRASTRUCTURE_PROD_APA
+      pool: ASSURANCE-JPE-PROD-AKS-WIN-RELEASE
+    - template: deployment-templates/availability-test-state-deployment-jobs-template.yml
+      parameters:
+        pool: ASSURANCE-JPE-PROD-AKS-WIN-RELEASE
+        azureSubscription: AzureRM_APA_AUDIT_PROD
+        geo: apa
+        lifecycle: prod
+        environment: prod
+        enableAvailabilityTests: false
+        environmentsToProcess: Both
+    - template: deployment-templates/maintenance-page-show-hide-deployment-jobs-template.yml
+      parameters:
+        pool: ASSURANCE-JPE-PROD-AKS-WIN-RELEASE
+        azureSubscription: AzureRM_APA_AUDIT_PROD
+        geo: apa
+        lifecycle: prod
+        environment: prod
+        dependsOn: AvailabilityTestEnablement        
+        endpointName: maintenancepage
+
+- stage: APA_Hide_Maintenance_Page
+  dependsOn: APA_Show_Maintenance_Page
+  jobs:
+    - deployment: APA_Hide_Maintenance_Page
+      environment: INFRASTRUCTURE_PROD_APA
+      pool: ASSURANCE-JPE-PROD-AKS-WIN-RELEASE
+    - template: deployment-templates/maintenance-page-show-hide-deployment-jobs-template.yml
+      parameters:
+        pool: ASSURANCE-JPE-PROD-AKS-WIN-RELEASE
+        azureSubscription: AzureRM_APA_AUDIT_PROD
+        geo: apa
+        lifecycle: prod
+        environment: prod
+        endpointName: ${{ variables.activeTrafficManagerEndpointNameApa }}
+
+- stage: APA_Start_Availability_Tests
+  dependsOn: APA_Hide_Maintenance_Page
+  jobs:
+    - deployment: APA_Start_Availability_Tests
+      environment: INFRASTRUCTURE_PROD_APA
+      pool: ASSURANCE-JPE-PROD-AKS-WIN-RELEASE
+    - template: deployment-templates/availability-test-state-deployment-jobs-template.yml
+      parameters:
+        pool: ASSURANCE-JPE-PROD-AKS-WIN-RELEASE
+        azureSubscription: AzureRM_APA_AUDIT_PROD
+        geo: apa
+        lifecycle: prod
+        environment: prod
+        enableAvailabilityTests: true
+        environmentsToProcess: ${{ variables.activeAvailabilityTestLocationApa }}

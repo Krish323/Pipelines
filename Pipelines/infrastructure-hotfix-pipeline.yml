@@ -1,0 +1,58 @@
+trigger: none
+
+name: $(Date:yyyyMMdd)$(Rev:.r)
+
+parameters:
+  - name: deploymentChannel
+    displayName: Deployment Channel
+    type: string
+    default: Hotfix Testing
+    values:
+      - Hotfix Testing
+      - Hotfix Release
+  - name: isAmeBcpPrimaryEnvironment
+    displayName: AME BCP is Primary Environment
+    type: boolean
+    default: false
+  - name: isApaBcpPrimaryEnvironment
+    displayName: APA BCP is Primary Environment
+    type: boolean
+    default: false
+  - name: isEmaBcpPrimaryEnvironment
+    displayName: EMA BCP is Primary Environment
+    type: boolean
+    default: false
+  - name: storeSQLUser
+    displayName: "Store SQL Developer Accounts (Lower Envs)"
+    type: boolean
+    default: false
+  - name: permissionMsiInDb
+    displayName: "Permission MSIs in DBs"
+    type: boolean
+    default: false
+
+variables:
+  environmentIndex: "h"
+
+stages:
+  - stage: BUILD
+    jobs:
+      - template: build-templates/infrastructure-build-jobs-template.yml
+        parameters:
+          scriptCopyOnly: false
+          validateTemplates: true
+
+  - ${{ if eq(parameters.deploymentChannel, 'Hotfix Testing') }}:
+      - template: stage-templates/infrastructure-feature-stage-template.yml
+        parameters:
+          environmentIndex: ${{ variables.environmentIndex }}
+          permissionMsiInDb: ${{ parameters.permissionMsiInDb }}
+          storeSQLUser: ${{ parameters.storeSQLUser }}
+
+  - ${{ if eq(parameters.deploymentChannel, 'Hotfix Release') }}:
+      - template: stage-templates/infrastructure-hotfix-stage-template.yml
+        parameters:
+          isAmeBcpPrimaryEnvironment: ${{ parameters.isAmeBcpPrimaryEnvironment }}
+          isApaBcpPrimaryEnvironment: ${{ parameters.isApaBcpPrimaryEnvironment }}
+          isEmaBcpPrimaryEnvironment: ${{ parameters.isEmaBcpPrimaryEnvironment }}
+          permissionMsiInDb: ${{ parameters.permissionMsiInDb }}

@@ -1,0 +1,97 @@
+trigger: none
+
+name: $(Date:yyyyMMdd)$(Rev:.r)
+
+resources:
+  repositories:
+    - repository: CER_App
+      type: git
+      name: CER_App
+      ref: refs/heads/develop
+
+variables:
+  buildConfiguration: "Debug"
+  dotNetVersion: "8.x"
+  nodeVersion: "14.x"
+  projectKey: "Navigator_APP"
+  solutionFileName: "Deloitte.Assurance.CER.sln"
+  # Required due to version conflict between Navigator and React eslint versions.
+  # This disables eslint so the build doesn't fail.
+  DISABLE_ESLINT_PLUGIN: true
+
+stages:
+- stage: SONARQUBE_SCAN
+  jobs:
+  - job: SONARQUBE_SCAN
+    pool: 
+      vmImage: 'windows-latest'
+    variables:
+      - template: variables-templates/build-variables-template.yml
+
+    steps:
+    - checkout: CER_App
+      clean: true
+
+    - checkout: self
+      clean: true
+    
+    - task: PowerShell@2
+      displayName: 'Display Variables'
+      inputs:
+        targetType: inline
+        script: |
+          Get-ChildItem -Path env: | Where-Object { $_.Name -notmatch '(AGENT_.*|AZURE_.*|RELEASE_.*|SYSTEM_.*)' } | Format-Table -AutoSize
+
+    - task: UseDotNet@2
+      displayName: "Use .Net Core sdk ${{ variables.dotNetVersion }}"
+      inputs:
+       version: ${{ variables.dotNetVersion }}
+
+    - task: DotNetCoreCLI@2
+      displayName: "dotnet restore: ${{ variables.solutionFileName }}"
+      inputs:
+        command: restore
+        projects: "**/${{ variables.solutionFileName }}"
+        vstsFeed: "$(vstsFeed)"
+
+    - task: NodeTool@0
+      displayName: 'Use Node ${{ variables.nodeVersion }}'
+      inputs:
+        checkLatest: true
+        versionSpec: ${{ variables.nodeVersion }}
+
+    - task: Npm@1
+      displayName: 'npm install'
+      inputs:
+        workingDir: "$(Build.SourcesDirectory)/CER_App/Deloitte.Assurance.CER.UI"
+        verbose: true
+
+    - task: SonarQubePrepare@6
+      displayName: 'Prepare analysis on SonarQube'
+      inputs:
+        SonarQube: 'SonarQube'
+        projectKey: ${{ variables.projectKey }}
+        projectName: ${{ variables.projectKey }}
+        projectVersion: '$(Build.buildnumber)'
+
+    - task: DotNetCoreCLI@2
+      displayName: "dotnet build: ${{ variables.solutionFileName }}"
+      inputs:
+        projects: "**/${{ variables.solutionFileName }}"
+        arguments: "-c $(buildConfiguration) --no-restore"
+
+    - task: Npm@1
+      displayName: 'npm run build: Deloitte.Assurance.CER.UI'
+      inputs:
+        command: custom
+        customCommand: 'run build'
+        verbose: false
+        workingDir: $(Build.SourcesDirectory)/CER_App/Deloitte.Assurance.CER.UI
+
+    - task: SonarQubeAnalyze@6
+      displayName: 'Run Code Analysis'
+      inputs: 
+        jdkversion: 'JAVA_HOME_21_X64'
+
+    - task: SonarQubePublish@6
+      displayName: 'Publish Quality Gate Result'

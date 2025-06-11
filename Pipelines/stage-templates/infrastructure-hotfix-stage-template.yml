@@ -1,0 +1,209 @@
+parameters:
+  - name: isAmeBcpPrimaryEnvironment
+    displayName: AME BCP is Primary Environment
+    type: boolean
+    default: false
+  - name: isApaBcpPrimaryEnvironment
+    displayName: APA BCP is Primary Environment
+    type: boolean
+    default: false
+  - name: isEmaBcpPrimaryEnvironment
+    displayName: EMA BCP is Primary Environment
+    type: boolean
+    default: false
+  - name: permissionMsiInDb
+    displayName: Permission MSIs in DBs
+    type: boolean
+    default: false
+
+stages:
+  - stage: VAL_POST_APPROVAL
+    dependsOn: [AME_VAL, APA_VAL, EMA_VAL]
+    jobs:
+      - deployment: VAL_POST_APPROVAL
+        environment: INFRASTRUCTURE_NPD
+        pool: ASSURANCE-USE2-PROD-AKS-WIN-RELEASE
+ 
+  - stage: PROD_PRE_APPROVAL
+    dependsOn: VAL_POST_APPROVAL
+    jobs:
+      - deployment: PROD_PRE_APPROVAL
+        environment: INFRASTRUCTURE_PROD_PREAPPROVAL
+        pool: ASSURANCE-USE2-PROD-AKS-WIN-RELEASE
+
+  - stage: AME_VAL
+    dependsOn: BUILD
+    variables:
+    - template: ../variables-templates/val-variables-template.yml
+    jobs:
+      - deployment: AME_VAL
+        environment: INFRASTRUCTURE_NPD
+        pool: ASSURANCE-USE2-PROD-AKS-WIN-RELEASE
+      - template: ../deployment-templates/infrastructure-deployment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-USE2-PROD-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_US_AUDIT_PROD
+          geo: ame
+          lifecycle: stg
+          environment: val
+          permissionMsiInDb: ${{ parameters.permissionMsiInDb }}
+
+  - stage: AME_PROD
+    dependsOn: PROD_PRE_APPROVAL
+    variables:
+    - template: ../variables-templates/prod-variables-template.yml
+    condition: succeeded('PROD_PRE_APPROVAL')
+    jobs:
+      - deployment: AME_PROD
+        environment: INFRASTRUCTURE_PROD_AME
+        pool: ASSURANCE-USE2-PROD-AKS-WIN-RELEASE
+      - template: ../deployment-templates/infrastructure-deployment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-USE2-PROD-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_US_AUDIT_PROD
+          geo: ame
+          lifecycle: prod
+          environment: prod
+          isPrimaryLocation: not(${{ parameters.isAmeBcpPrimaryEnvironment }})
+          permissionMsiInDb: ${{ parameters.permissionMsiInDb }}
+
+  - stage: AME_BCP
+    dependsOn: AME_PROD
+    variables:
+    - template: ../variables-templates/bcp-variables-template.yml
+    jobs:
+      - deployment: AME_BCP
+        environment: INFRASTRUCTURE_PROD_AME
+        pool: ASSURANCE-USC-BCP-AKS-WIN-RELEASE
+      - template: ../deployment-templates/infrastructure-deployment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-USC-BCP-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_US_AUDIT_PROD
+          geo: ame
+          lifecycle: bcp
+          environment: bcp
+          isPrimaryLocation: ${{ parameters.isAmeBcpPrimaryEnvironment }}
+          permissionMsiInDb: ${{ parameters.permissionMsiInDb }}
+
+  - stage: EMA_VAL
+    dependsOn: BUILD
+    variables:
+    - template: ../variables-templates/val-variables-template.yml
+    jobs:
+      - deployment: EMA_VAL
+        environment: INFRASTRUCTURE_NPD
+        pool: ASSURANCE-EUW-PROD-AKS-WIN-RELEASE
+      - template: ../deployment-templates/infrastructure-deployment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-EUW-PROD-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_EMA_AUDIT_PROD
+          azureSubscriptionSqlReplica: ARM_Navigator_EMA_Deploy_Prod
+          geo: ema
+          lifecycle: stg
+          environment: val
+          isPrimaryGeo: true
+          sqlReplicas:
+            - use2
+            - jpe
+          permissionMsiInDb: ${{ parameters.permissionMsiInDb }}
+
+  - stage: EMA_PROD
+    dependsOn: PROD_PRE_APPROVAL
+    variables:
+    - template: ../variables-templates/prod-variables-template.yml
+    condition: succeeded('PROD_PRE_APPROVAL')
+    jobs:
+      - deployment: EMA_PROD
+        environment: INFRASTRUCTURE_PROD_EMA
+        pool: ASSURANCE-EUW-PROD-AKS-WIN-RELEASE
+      - template: ../deployment-templates/infrastructure-deployment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-EUW-PROD-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_EMA_AUDIT_PROD
+          azureSubscriptionSqlReplica: ARM_Navigator_EMA_Deploy_Prod
+          geo: ema
+          lifecycle: prod
+          environment: prod
+          isPrimaryGeo: true
+          isPrimaryLocation: not(${{ parameters.isEmaBcpPrimaryEnvironment }})
+          sqlReplicas:
+            - use2
+            - jpe
+          permissionMsiInDb: ${{ parameters.permissionMsiInDb }}
+
+  - stage: EMA_BCP
+    dependsOn: EMA_PROD
+    variables:
+    - template: ../variables-templates/bcp-variables-template.yml
+    jobs:
+      - deployment: EMA_BCP
+        environment: INFRASTRUCTURE_PROD_EMA
+        pool: ASSURANCE-EUN-BCP-AKS-WIN-RELEASE
+      - template: ../deployment-templates/infrastructure-deployment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-EUN-BCP-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_EMA_AUDIT_PROD
+          azureSubscriptionSqlReplica: ARM_Navigator_EMA_Deploy_Prod
+          geo: ema
+          lifecycle: bcp
+          environment: bcp
+          isPrimaryGeo: true
+          isPrimaryLocation: ${{ parameters.isEmaBcpPrimaryEnvironment }}
+          sqlReplicas:
+            - usc
+            - jpw
+          permissionMsiInDb: ${{ parameters.permissionMsiInDb }}
+
+  - stage: APA_VAL
+    dependsOn: BUILD
+    variables:
+    - template: ../variables-templates/val-variables-template.yml
+    jobs:
+      - deployment: APA_VAL
+        environment: INFRASTRUCTURE_NPD
+        pool: ASSURANCE-JPE-PROD-AKS-WIN-RELEASE
+      - template: ../deployment-templates/infrastructure-deployment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-JPE-PROD-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_APA_AUDIT_PROD
+          geo: apa
+          lifecycle: stg
+          environment: val
+          permissionMsiInDb: ${{ parameters.permissionMsiInDb }}
+
+  - stage: APA_PROD
+    dependsOn: PROD_PRE_APPROVAL
+    variables:
+    - template: ../variables-templates/prod-variables-template.yml
+    condition: succeeded('PROD_PRE_APPROVAL')
+    jobs:
+      - deployment: APA_PROD
+        environment: INFRASTRUCTURE_PROD_APA
+        pool: ASSURANCE-JPE-PROD-AKS-WIN-RELEASE
+      - template: ../deployment-templates/infrastructure-deployment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-JPE-PROD-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_APA_AUDIT_PROD
+          geo: apa
+          lifecycle: prod
+          environment: prod
+          isPrimaryLocation: not(${{ parameters.isApaBcpPrimaryEnvironment }})
+          permissionMsiInDb: ${{ parameters.permissionMsiInDb }}
+
+  - stage: APA_BCP
+    dependsOn: APA_PROD
+    variables:
+    - template: ../variables-templates/bcp-variables-template.yml
+    jobs:
+      - deployment: APA_BCP
+        environment: INFRASTRUCTURE_PROD_APA
+        pool: ASSURANCE-JPW-BCP-AKS-WIN-RELEASE
+      - template: ../deployment-templates/infrastructure-deployment-jobs-template.yml
+        parameters:
+          pool: ASSURANCE-JPW-BCP-AKS-WIN-RELEASE
+          azureSubscription: AzureRM_APA_AUDIT_PROD
+          geo: apa
+          lifecycle: bcp
+          environment: bcp
+          isPrimaryLocation: ${{ parameters.isApaBcpPrimaryEnvironment }}
+          permissionMsiInDb: ${{ parameters.permissionMsiInDb }}

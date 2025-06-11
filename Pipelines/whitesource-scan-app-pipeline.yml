@@ -1,0 +1,109 @@
+trigger: none
+
+name: $(Date:yyyyMMdd)$(Rev:.r)
+
+resources:
+  repositories:
+    - repository: CER_App
+      type: git
+      name: CER_App
+      ref: refs/heads/develop
+
+stages:
+- stage: WHITESOURCE_SCAN
+  jobs:
+  - job: WHITESOURCE_SCAN_BE
+    pool: NET-Master
+    variables:
+      - template: ./variables-templates/whitesource-variables-template.yml
+    steps:
+    - checkout: CER_App
+      clean: true
+
+    - checkout: self
+      clean: true
+       
+    - task: PowerShell@2
+      displayName: 'Pull Build Tools'
+      env:
+        SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+        AGENT_BUILDDIRECTORY: $(Agent.BuildDirectory)
+      inputs:
+        filePath: "$(Build.SourcesDirectory)/CER_Infrastructure/PipelineScripts/Get-BuildTools.ps1"
+        arguments: '-BuildToolsBranch "master"'
+
+    - task: UseDotNet@2
+      displayName: "Use .Net Core sdk 8.x"
+      inputs:
+        version: 8.x
+
+    - task: DotNetCoreCLI@2
+      displayName: "dotnet restore"
+      inputs:
+        command: restore
+        projects: "**/*.csproj"
+        vstsFeed: "9742bf8b-0208-4a5c-b127-6fdb446ad826"
+
+    - task: AzureKeyVault@1
+      displayName: "Get WhiteSource Credentials"
+      inputs:
+        azureSubscription: "AzureRM_EMA_AUDIT_PREPROD"
+        KeyVaultName: "$(keyVaultName)"
+        SecretsFilter: "$(secretName)"
+
+    - task: PowerShell@2
+      displayName: 'Running WhiteSource-Scan'
+      inputs:
+        targetType: filePath
+        filePath: '$(BuildToolsFolder)\Scripts\PowerShell\Scanning\WhiteSource-Scan.ps1'
+        arguments: '-SourceBasePath "$(Build.SourcesDirectory)/CER_App" -ScanFolders "$(whiteSourceScanFoldersApi)" -WhiteSourceJarPath "$(whiteSourceJarPath)" -WhiteSourceConfigPath "$(whiteSourceConfigPath)" -WhiteSourceProjectName "$(whiteSourceProjectNameApi)" -WhiteSourceApiKey $(whitesource-api-key)'
+
+  - job: WHITESOURCE_SCAN_FE
+    pool: NPM-Master
+    variables:
+      - template: ./variables-templates/whitesource-variables-template.yml
+    steps:
+    - checkout: CER_App
+    - checkout: self
+    - task: PowerShell@2
+      displayName: 'Pull Build Tools'
+      env:
+        SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+        AGENT_BUILDDIRECTORY: $(Agent.BuildDirectory)
+      inputs:
+        filePath: "$(Build.SourcesDirectory)/CER_Infrastructure/PipelineScripts/Get-BuildTools.ps1"
+        arguments: '-BuildToolsBranch "master"'
+
+    - task: NodeTool@0
+      displayName: 'Use Node 14.x'
+      inputs:
+        versionSpec: 14.x
+        checkLatest: true
+
+    - task: Npm@1
+      displayName: 'npm cache clean --force'
+      inputs:
+        command: custom
+        workingDir: "$(Build.SourcesDirectory)/CER_App/Deloitte.Assurance.CER.UI"
+        verbose: true
+        customCommand: 'cache clean --force'
+
+    - task: Npm@1
+      displayName: 'npm install - UI'
+      inputs:
+        workingDir: "$(Build.SourcesDirectory)/CER_App/Deloitte.Assurance.CER.UI"
+        verbose: true
+
+    - task: AzureKeyVault@1
+      displayName: "Get WhiteSource Credentials"
+      inputs:
+        azureSubscription: "AzureRM_EMA_AUDIT_PREPROD"
+        KeyVaultName: "$(keyVaultName)"
+        SecretsFilter: "$(secretName)"
+        
+    - task: PowerShell@2
+      displayName: 'Running WhiteSource-Scan'
+      inputs:
+        targetType: filePath
+        filePath: '$(BuildToolsFolder)\Scripts\PowerShell\Scanning\WhiteSource-Scan.ps1'
+        arguments: '-SourceBasePath "$(Build.SourcesDirectory)/CER_App" -ScanFolders "$(whiteSourceScanFoldersUI)" -WhiteSourceJarPath "$(whiteSourceJarPath)" -WhiteSourceConfigPath "$(whiteSourceConfigPath)" -WhiteSourceProjectName "$(whiteSourceProjectNameUI)" -WhiteSourceApiKey $(whitesource-api-key)'

@@ -1,0 +1,35 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "appName": {
+            "value": "navigator"
+        },
+        "locationCode": {
+            "value": "use2"
+        },
+        "environment": {
+            "value": "val"
+        },
+        "privateEndpoints": {
+            "value": [
+                {
+                    "name": "smtp",
+                    "privateLinkServiceId": "/subscriptions/8c71ef53-4473-4862-af36-bae6e40451b2/resourceGroups/AZRG-AME-AUD-SMTPRELAY-PRD/providers/Microsoft.Network/privateLinkServices/prdsmtprelayeusPrivateLink",
+                    "privateIPAddress": "172.16.1.4"
+                },
+                {
+                    "name": "icap",
+                    "privateLinkServiceId": "/subscriptions/8c71ef53-4473-4862-af36-bae6e40451b2/resourceGroups/AZRG-AUD-Stage-ICAP-AME-USE2/providers/Microsoft.Network/privateLinkServices/stageicapamewebuse2icap-endpoint-link",
+                    "privateIPAddress": "172.16.1.5"
+                }
+            ]
+        },
+        "appGatewayVnetIpAddress": {
+            "value": "10.122.48.0/21"
+        },
+        "releaseServersVnetIpAddress": {
+            "value": "10.122.24.0/21"
+        }
+    }
+}

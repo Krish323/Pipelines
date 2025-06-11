@@ -1,0 +1,122 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "appName": {
+      "value": "navigator"
+    },
+    "locationCode": {
+      "value": "use2"
+    },
+    "environment": {
+      "value": "stage"
+    },
+    "applicationLogAnalyticsWorkspace": {
+      "value": "/subscriptions/4bca84d0-9bfe-4519-9e8a-0648cf94d8ee/resourceGroups/AZRG-USE2-AUD-ASSURANCE-PROD-SHARED/providers/Microsoft.OperationalInsights/workspaces/passurancelause2"
+    },
+    "appGatewaySubnets": {
+      "value": [
+        {
+          "resourceGroupName": "AUDIT_PROD_RG_Network",
+          "vnetName": "azeus2prdvnt01",
+          "subnetName": "auditproduse2ag1_subnet"
+        }
+      ]
+    },
+    "keyManagementSubnets": {
+      "value": [
+        {
+          "resourceGroupName": "AUDIT_PROD_RG_Network",
+          "vnetName": "azeus2prdvnt01",
+          "subnetName": "AUDIT_PROD_OMNIA_General_Subnet"
+        },
+        {
+          "resourceGroupName": "AZRG_OMNIABUILD_PROD_AME_USE2_AKS",
+          "vnetName": "prdomniaaksvnetuse2",
+          "subnetName": "nodes-subnet"
+        }
+      ]
+    },
+    "signalRAllowedOrigins": {
+      "value": [
+        "https://snavigator.aaps.deloitte.com",
+        "https://snavigatorappsvcuiuse2.azurewebsites.net"
+      ]
+    },
+    "availabilityTestArray": {
+      "value": [
+        {
+          "name": "__appServiceNameWeb__",
+          "url": "https://__uiHostName__",
+          "description": "__appServiceNameWeb__ - https://__uiHostName__ is not responding",
+          "actionGroupName": "noncritical",
+          "severity": 2,
+          "enabled": true,
+          "expected": 200,
+          "frequencySeconds": 300,
+          "timeoutSeconds": 30,
+          "failedLocationCount": 2,
+          "pingText": "",
+          "locations": [
+            {
+              "Id": "us-fl-mia-edge"
+            },
+            {
+              "Id": "us-il-ch1-azr"
+            },
+            {
+              "Id": "us-tx-sn1-azr"
+            },
+            {
+              "Id": "us-ca-sjc-azr"
+            }
+          ]
+        },
+        {
+          "name": "__appServiceNameApi__",
+          "url": "https://__apiHostNameAme__/api/case/data",
+          "description": "__appServiceNameApi__ - https://__apiHostNameAme__ is not responding",
+          "actionGroupName": "noncritical",
+          "severity": 2,
+          "enabled": true,
+          "expected": 401,
+          "frequencySeconds": 300,
+          "timeoutSeconds": 30,
+          "failedLocationCount": 2,
+          "pingText": "",
+          "locations": [
+            {
+              "Id": "us-fl-mia-edge"
+            },
+            {
+              "Id": "us-il-ch1-azr"
+            },
+            {
+              "Id": "us-tx-sn1-azr"
+            },
+            {
+              "Id": "us-ca-sjc-azr"
+            }
+          ]
+        }
+      ]
+    },
+    "actionGroupsArray": {
+      "value": [
+        {
+          "name": "noncritical",
+          "emailReceivers": [
+            {
+              "name": "Email usassurancedevopsame@deloitte.com",
+              "emailAddress": "usassurancedevopsame@deloitte.com",
+              "useCommonAlertSchema": true
+            }
+          ],
+          "smsReceivers": [],
+          "voiceReceivers": [],
+          "webhookReceivers": []
+        }
+      ]
+    }
+  }
+}

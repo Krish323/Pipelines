@@ -1,0 +1,104 @@
+parameters:
+  pool: null
+  azureSubscription: ""
+  azureSubscriptionSqlReplica: ""
+  geo: ""
+  lifecycle: ""
+  environment: ""
+  environmentIndex: ""
+  storeSQLUser: false
+  isPrimaryGeo: false
+  isPrimaryLocation: true
+  sqlReplicas: []
+  permissionMsiInDb: false
+
+jobs:
+  - job: InfrastructureDeployment
+    pool: ${{ parameters.pool }}
+    variables:
+      - template: ../variables-templates/${{ parameters.environment}}-variables-template.yml
+        parameters:
+          environmentIndex: ${{ parameters.environmentIndex }}
+          geo: ${{ parameters.geo }}
+      - template: ../variables-templates/${{ parameters.lifecycle }}-${{ parameters.geo}}-variables-template.yml
+      - template: ../variables-templates/${{ parameters.geo}}-variables-template.yml
+      - template: ../variables-templates/release-variables-template.yml
+        parameters:
+          environment: ${{ parameters.environment }}
+          isPrimaryGeo: ${{ parameters.isPrimaryGeo }}
+      - template: ../variables-templates/cekvault-variables-template.yml
+        parameters:
+          geo: ${{ parameters.geo }}
+          environment: ${{ parameters.environment }}          
+    steps:
+      - checkout: none
+      - download: current
+
+      - template: steps-templates/pipeline-generate-variables-steps-template.yml
+
+      - template: steps-templates/infrastructure-initialize-deployment-steps-template.yml
+        parameters:
+          azureSubscription: "${{ parameters.azureSubscription }}"
+          deploySecondaryGeos: ${{ variables.deploySecondaryGeos }}
+
+      - ${{ if or(eq(parameters.isPrimaryGeo, true), eq(variables.deploySecondaryGeos, true)) }}:
+        - template: steps-templates/infrastructure-resource-deployment-steps-template.yml
+          parameters:
+            azureSubscription: "${{ parameters.azureSubscription }}"
+            azureSubscriptionSqlReplica: "${{ parameters.azureSubscriptionSqlReplica }}"
+            deploySecondaryGeos: ${{ variables.deploySecondaryGeos }}
+            isPrimaryGeo: ${{ parameters.isPrimaryGeo }}
+            isPrimaryLocation: ${{ parameters.isPrimaryLocation }}
+            sqlReplicas: "${{ parameters.sqlReplicas }}"
+            permissionMsiInDb: ${{ parameters.permissionMsiInDb }}
+
+  - ${{ if or(eq(parameters.isPrimaryGeo, true), eq(variables.deploySecondaryGeos, true)) }}:
+    - job: RotateSecretsDeployment
+      dependsOn: InfrastructureDeployment
+      pool: ${{ parameters.pool }}
+      variables:
+        - group: ase-less-infrastructure-${{ parameters.lifecycle }}-v2
+        - template: ../variables-templates/${{ parameters.environment}}-variables-template.yml
+          parameters:
+            environmentIndex: ${{ parameters.environmentIndex }}
+        - template: ../variables-templates/${{ parameters.lifecycle }}-${{ parameters.geo}}-variables-template.yml
+        - template: ../variables-templates/${{ parameters.geo}}-variables-template.yml
+        - template: ../variables-templates/release-variables-template.yml
+          parameters:
+            environment: ${{ parameters.environment }}
+            isPrimaryGeo: ${{ parameters.isPrimaryGeo}}
+      steps:
+        - checkout: none
+        - download: current
+
+        - template: steps-templates/pipeline-generate-variables-steps-template.yml
+
+        - template: steps-templates/infrastructure-rotatesecrets-steps-template.yml
+          parameters:
+            azureSubscription: "${{ parameters.azureSubscription }}"
+            rotateSecrets: false
+            storeSQLUser: "${{ parameters.storeSQLUser }}"
+
+  - job: PipelineExecutionRetention
+    ${{ if or(eq(parameters.isPrimaryGeo, true), eq(variables.deploySecondaryGeos, true)) }}:
+      dependsOn: RotateSecretsDeployment
+    ${{ else }}:
+      dependsOn: InfrastructureDeployment
+    condition: and(succeeded(), in(lower('${{ parameters.environment }}'), 'prod', 'bcp'))
+    workspace:
+      clean: all
+    pool: ${{ parameters.pool }}
+    steps:
+      - checkout: none
+      - task: DownloadPipelineArtifact@2
+        displayName: "Download Infrastructure Artifact"
+        inputs:
+          artifactName: Infrastructure
+          path: $(Pipeline.Workspace)/Infrastructure
+
+      - task: PowerShell@2
+        displayName: "Update Production Pipeline Execution Retention"
+        inputs:
+          targetType: filePath
+          filePath: "$(Pipeline.Workspace)/Infrastructure/PipelineScripts/Set-PipelineRetentionPolicy.ps1"
+          arguments: '-AccessToken "Bearer $(System.AccessToken)" -DefinitionId "$(System.DefinitionId)" -OwnerId "User:$(Build.RequestedForId)" -RunId "$(Build.BuildId)" -CollectionUri "$(System.CollectionUri)" -TeamProject "$(System.TeamProject)"'

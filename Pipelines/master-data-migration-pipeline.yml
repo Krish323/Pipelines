@@ -1,0 +1,333 @@
+# APPLICATION_QA environment is required on DEV stages in order to require approval before deployment
+
+trigger: none
+
+name: $(Date:yyyyMMdd)$(Rev:.r)
+
+resources:
+  repositories:
+    - repository: CER_App
+      type: git
+      name: CER_APP
+      ref: refs/heads/develop
+
+    - repository: CER_Infrastructure
+      type: git
+      name: CER_Infrastructure
+      ref: refs/heads/develop
+
+stages:
+  - stage: EMA_DEV
+    dependsOn: []
+    jobs:
+      - deployment: EMA_DEV
+        environment: APPLICATION_QA
+        pool:
+          name: EMA-WEU-NPD-AZ-POOL
+      - template: deployment-templates/master-data-migration-deployment-jobs-template.yml
+        parameters:
+          primaryGeoPoolName: EMA-WEU-NPD-AZ-POOL
+          primaryGeoAzureSubscription: AzureRM_EMA_AUDIT_PREPROD
+          primaryGeo: "ema"
+          destinationGeoPoolName: EMA-WEU-NPD-AZ-POOL
+          destinationGeoAzureSubscription: AzureRM_EMA_AUDIT_PREPROD
+          destinationGeo: "ema"
+          isDestinationGeoPrimaryGeo: true
+          lifecycle: npd
+          environment: dev
+          applicationRepo: CER_App
+          infrastructureRepo: CER_Infrastructure
+
+  - stage: EMA_QA
+    dependsOn: []
+    jobs:
+      - deployment: EMA_QA
+        environment: APPLICATION_QA
+        pool:
+          name: EMA-WEU-NPD-AZ-POOL
+      - template: deployment-templates/master-data-migration-deployment-jobs-template.yml
+        parameters:
+          primaryGeoPoolName: EMA-WEU-NPD-AZ-POOL
+          primaryGeoAzureSubscription: AzureRM_EMA_AUDIT_PREPROD
+          primaryGeo: "ema"
+          destinationGeoPoolName: EMA-WEU-NPD-AZ-POOL
+          destinationGeoAzureSubscription: AzureRM_EMA_AUDIT_PREPROD
+          destinationGeo: "ema"
+          isDestinationGeoPrimaryGeo: true
+          lifecycle: npd
+          environment: qa
+          applicationRepo: CER_App
+          infrastructureRepo: CER_Infrastructure
+
+  - stage: EMA_LOAD
+    dependsOn: []
+    jobs:
+      - deployment: EMA_LOAD
+        environment: APPLICATION_LOAD
+        pool:
+          name: EMA-WEU-NPD-AZ-POOL
+      - template: deployment-templates/master-data-migration-deployment-jobs-template.yml
+        parameters:
+          primaryGeoPoolName: EMA-WEU-NPD-AZ-POOL
+          primaryGeoAzureSubscription: AzureRM_EMA_AUDIT_PREPROD
+          primaryGeo: "ema"
+          destinationGeoPoolName: EMA-WEU-NPD-AZ-POOL
+          destinationGeoAzureSubscription: AzureRM_EMA_AUDIT_PREPROD
+          destinationGeo: "ema"
+          isDestinationGeoPrimaryGeo: true
+          lifecycle: npd
+          environment: load
+          applicationRepo: CER_App
+          infrastructureRepo: CER_Infrastructure
+
+  - stage: EMA_STAGE
+    dependsOn: []
+    jobs:
+      - deployment: EMA_STAGE
+        environment: APPLICATION_STAGE
+        pool:
+          name: EMA-PROD-AZ-POOL
+      - template: deployment-templates/master-data-migration-deployment-jobs-template.yml
+        parameters:
+          primaryGeoPoolName: EMA-PROD-AZ-POOL
+          primaryGeoAzureSubscription: AzureRM_EMA_AUDIT_PROD
+          primaryGeo: "ema"
+          destinationGeoPoolName: EMA-PROD-AZ-POOL
+          destinationGeoAzureSubscription: AzureRM_EMA_AUDIT_PROD
+          destinationGeo: "ema"
+          isDestinationGeoPrimaryGeo: true
+          lifecycle: stg
+          environment: stage
+          applicationRepo: CER_App
+          infrastructureRepo: CER_Infrastructure
+
+  - stage: EMA_PROD
+    dependsOn: []
+    jobs:
+      - deployment: EMA_PROD
+        environment: INFRASTRUCTURE_PROD_EMA
+        pool:
+          name: EMA-PROD-AZ-POOL
+      - template: deployment-templates/master-data-migration-deployment-jobs-template.yml
+        parameters:
+          primaryGeoPoolName: EMA-PROD-AZ-POOL
+          primaryGeoAzureSubscription: AzureRM_EMA_AUDIT_PROD
+          primaryGeo: "ema"
+          destinationGeoPoolName: EMA-PROD-AZ-POOL
+          destinationGeoAzureSubscription: AzureRM_EMA_AUDIT_PROD
+          destinationGeo: "ema"
+          isDestinationGeoPrimaryGeo: true
+          lifecycle: prod
+          environment: prod
+          applicationRepo: CER_App
+          infrastructureRepo: CER_Infrastructure
+
+  - stage: AME_DEV
+    dependsOn: []
+    jobs:
+      - deployment: AME_DEV
+        environment: APPLICATION_QA
+        pool:
+          name: EMA-WEU-NPD-AZ-POOL
+      - template: deployment-templates/master-data-migration-deployment-jobs-template.yml
+        parameters:
+          primaryGeoPoolName: EMA-WEU-NPD-AZ-POOL
+          primaryGeoAzureSubscription: AzureRM_EMA_AUDIT_PREPROD
+          primaryGeo: "ema"
+          destinationGeoPoolName: AME-OMNIA-PREPROD-AZ-USE2-POOL
+          destinationGeoAzureSubscription: AzureRM_US_AUDIT_PREPROD
+          destinationGeo: "ame"
+          isDestinationGeoPrimaryGeo: false
+          lifecycle: npd
+          environment: dev
+          applicationRepo: CER_App
+          infrastructureRepo: CER_Infrastructure
+
+  - stage: AME_QA
+    dependsOn: []
+    jobs:
+      - deployment: AME_QA
+        environment: APPLICATION_QA
+        pool:
+          name: EMA-WEU-NPD-AZ-POOL
+      - template: deployment-templates/master-data-migration-deployment-jobs-template.yml
+        parameters:
+          primaryGeoPoolName: EMA-WEU-NPD-AZ-POOL
+          primaryGeoAzureSubscription: AzureRM_EMA_AUDIT_PREPROD
+          primaryGeo: "ema"
+          destinationGeoPoolName: AME-OMNIA-PREPROD-AZ-USE2-POOL
+          destinationGeoAzureSubscription: AzureRM_US_AUDIT_PREPROD
+          destinationGeo: "ame"
+          isDestinationGeoPrimaryGeo: false
+          lifecycle: npd
+          environment: qa
+          applicationRepo: CER_App
+          infrastructureRepo: CER_Infrastructure
+
+  - stage: AME_LOAD
+    dependsOn: []
+    jobs:
+      - deployment: AME_LOAD
+        environment: APPLICATION_LOAD
+        pool:
+          name: EMA-WEU-NPD-AZ-POOL
+      - template: deployment-templates/master-data-migration-deployment-jobs-template.yml
+        parameters:
+          primaryGeoPoolName: EMA-WEU-NPD-AZ-POOL
+          primaryGeoAzureSubscription: AzureRM_EMA_AUDIT_PREPROD
+          primaryGeo: "ema"
+          destinationGeoPoolName: AME-OMNIA-PREPROD-AZ-USE2-POOL
+          destinationGeoAzureSubscription: AzureRM_US_AUDIT_PREPROD
+          destinationGeo: "ame"
+          isDestinationGeoPrimaryGeo: false
+          lifecycle: npd
+          environment: load
+          applicationRepo: CER_App
+          infrastructureRepo: CER_Infrastructure
+
+  - stage: AME_STAGE
+    dependsOn: []
+    jobs:
+      - deployment: AME_STAGE
+        environment: APPLICATION_STAGE
+        pool:
+          name: EMA-PROD-AZ-POOL
+      - template: deployment-templates/master-data-migration-deployment-jobs-template.yml
+        parameters:
+          primaryGeoPoolName: EMA-PROD-AZ-POOL
+          primaryGeoAzureSubscription: AzureRM_EMA_AUDIT_PROD
+          primaryGeo: "ema"
+          destinationGeoPoolName: AME-OMNIA-PROD-AZ-USE2-POOL
+          destinationGeoAzureSubscription: AzureRM_US_AUDIT_PROD
+          destinationGeo: "ame"
+          isDestinationGeoPrimaryGeo: false
+          lifecycle: stg
+          environment: stage
+          applicationRepo: CER_App
+          infrastructureRepo: CER_Infrastructure
+  
+  - stage: AME_PROD
+    dependsOn: []
+    jobs:
+      - deployment: AME_PROD
+        environment: INFRASTRUCTURE_PROD_AME
+        pool:
+          name: EMA-PROD-AZ-POOL
+      - template: deployment-templates/master-data-migration-deployment-jobs-template.yml
+        parameters:
+          primaryGeoPoolName: EMA-PROD-AZ-POOL
+          primaryGeoAzureSubscription: AzureRM_EMA_AUDIT_PROD
+          primaryGeo: "ema"
+          destinationGeoPoolName: AME-OMNIA-PROD-AZ-USE2-POOL
+          destinationGeoAzureSubscription: AzureRM_US_AUDIT_PROD
+          destinationGeo: "ame"
+          isDestinationGeoPrimaryGeo: false
+          lifecycle: prod
+          environment: prod
+          applicationRepo: CER_App
+          infrastructureRepo: CER_Infrastructure
+
+  - stage: APA_DEV
+    dependsOn: []
+    jobs:
+      - deployment: APA_DEV
+        environment: APPLICATION_QA
+        pool:
+          name: EMA-WEU-NPD-AZ-POOL
+      - template: deployment-templates/master-data-migration-deployment-jobs-template.yml
+        parameters:
+          primaryGeoPoolName: EMA-WEU-NPD-AZ-POOL
+          primaryGeoAzureSubscription: AzureRM_EMA_AUDIT_PREPROD
+          primaryGeo: "ema"
+          destinationGeoPoolName: APA-JPE-NPD-AZ-POOL
+          destinationGeoAzureSubscription: AzureRM_APA_AUDIT_PREPROD
+          destinationGeo: "apa"
+          isDestinationGeoPrimaryGeo: false
+          lifecycle: npd
+          environment: dev
+          applicationRepo: CER_App
+          infrastructureRepo: CER_Infrastructure
+
+  - stage: APA_QA
+    dependsOn: []
+    jobs:
+      - deployment: APA_QA
+        environment: APPLICATION_QA
+        pool:
+          name: EMA-WEU-NPD-AZ-POOL
+      - template: deployment-templates/master-data-migration-deployment-jobs-template.yml
+        parameters:
+          primaryGeoPoolName: EMA-WEU-NPD-AZ-POOL
+          primaryGeoAzureSubscription: AzureRM_EMA_AUDIT_PREPROD
+          primaryGeo: "ema"
+          destinationGeoPoolName: APA-JPE-NPD-AZ-POOL
+          destinationGeoAzureSubscription: AzureRM_APA_AUDIT_PREPROD
+          destinationGeo: "apa"
+          isDestinationGeoPrimaryGeo: false
+          lifecycle: npd
+          environment: qa
+          applicationRepo: CER_App
+          infrastructureRepo: CER_Infrastructure
+
+  - stage: APA_LOAD
+    dependsOn: []
+    jobs:
+      - deployment: APA_LOAD
+        environment: APPLICATION_LOAD
+        pool:
+          name: EMA-WEU-NPD-AZ-POOL
+      - template: deployment-templates/master-data-migration-deployment-jobs-template.yml
+        parameters:
+          primaryGeoPoolName: EMA-WEU-NPD-AZ-POOL
+          primaryGeoAzureSubscription: AzureRM_EMA_AUDIT_PREPROD
+          primaryGeo: "ema"
+          destinationGeoPoolName: APA-JPE-NPD-AZ-POOL
+          destinationGeoAzureSubscription: AzureRM_APA_AUDIT_PREPROD
+          destinationGeo: "apa"
+          isDestinationGeoPrimaryGeo: false
+          lifecycle: npd
+          environment: load
+          applicationRepo: CER_App
+          infrastructureRepo: CER_Infrastructure
+
+  - stage: APA_STAGE
+    dependsOn: []
+    jobs:
+      - deployment: APA_STAGE
+        environment: APPLICATION_STAGE
+        pool:
+          name: EMA-PROD-AZ-POOL
+      - template: deployment-templates/master-data-migration-deployment-jobs-template.yml
+        parameters:
+          primaryGeoPoolName: EMA-PROD-AZ-POOL
+          primaryGeoAzureSubscription: AzureRM_EMA_AUDIT_PROD
+          primaryGeo: "ema"
+          destinationGeoPoolName: APA-JPE-PRD-AZ-POOL
+          destinationGeoAzureSubscription: AzureRM_APA_AUDIT_PROD
+          destinationGeo: "apa"
+          isDestinationGeoPrimaryGeo: false
+          lifecycle: stg
+          environment: stage
+          applicationRepo: CER_App
+          infrastructureRepo: CER_Infrastructure
+  
+  - stage: APA_PROD
+    dependsOn: []
+    jobs:
+      - deployment: APA_PROD
+        environment: INFRASTRUCTURE_PROD_APA
+        pool:
+          name: EMA-PROD-AZ-POOL
+      - template: deployment-templates/master-data-migration-deployment-jobs-template.yml
+        parameters:
+          primaryGeoPoolName: EMA-PROD-AZ-POOL
+          primaryGeoAzureSubscription: AzureRM_EMA_AUDIT_PROD
+          primaryGeo: "ema"
+          destinationGeoPoolName: APA-JPE-PRD-AZ-POOL
+          destinationGeoAzureSubscription: AzureRM_APA_AUDIT_PROD
+          destinationGeo: "apa"
+          isDestinationGeoPrimaryGeo: false
+          lifecycle: prod
+          environment: prod
+          applicationRepo: CER_App
+          infrastructureRepo: CER_Infrastructure

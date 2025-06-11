@@ -1,0 +1,52 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "appName": {
+      "value": "navigator"
+    },
+    "locationCode": {
+      "value": "use2"
+    },
+    "environment": {
+      "value": "val"
+    },
+    "applicationLogAnalyticsWorkspace": {
+      "value": "/subscriptions/4bca84d0-9bfe-4519-9e8a-0648cf94d8ee/resourceGroups/AZRG-USE2-AUD-ASSURANCE-PROD-SHARED/providers/Microsoft.OperationalInsights/workspaces/passurancelause2"
+    },
+    "appGatewaySubnets": {
+      "value": [
+        {
+          "resourceGroupName": "AUDIT_PROD_RG_Network",
+          "vnetName": "azeus2prdvnt01",
+          "subnetName": "auditproduse2ag1_subnet"
+        },
+        {
+          "resourceGroupName": "AUDIT_PROD_RG_Network",
+          "vnetName": "azeus2prdvnt01",
+          "subnetName": "auditproduse2ag2_subnet"
+        }
+      ]
+    },
+    "keyManagementSubnets": {
+      "value": [
+        {
+          "resourceGroupName": "AUDIT_PROD_RG_Network",
+          "vnetName": "azeus2prdvnt01",
+          "subnetName": "AUDIT_PROD_OMNIA_General_Subnet"
+        },
+        {
+          "resourceGroupName": "AZRG_OMNIABUILD_PROD_AME_USE2_AKS",
+          "vnetName": "prdomniaaksvnetuse2",
+          "subnetName": "nodes-subnet"
+        }
+      ]
+    },
+    "signalRAllowedOrigins": {
+      "value": [
+        "https://vnavigator.aaps.deloitte.com",
+        "https://vnavigatorappsvcuiuse2.azurewebsites.net"
+      ]
+    }
+  }
+}

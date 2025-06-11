@@ -1,0 +1,11 @@
+variables:
+  appDbNames: Navigator_Case_Master,Navigator_Master
+  containerInstanceCodes: 'AE,AO,AR,AT,BE,BH,BO,BR,CA,CH,CL,CO,CR,CY,DE,DK,EC,EG,ES,FI,FR,GB,GR,GT,HU,IE,IL,IQ,IS,IT,JO,KW,KY,LB,LU,LY,MT,MX,NL,NO,OM,PA,PE,PK,PS,PT,PY,QA,RU1,RU2,SA,SE,SY,TR,UA,UY,VE,YE,ZA'
+  deployKeyVaultName: fincalcemaprddeployvault
+  geo: 'ema'
+  lifecycle: 'prod'
+  lifecycleAlias: 'p'
+  location: 'westeurope'
+  locationCode: 'euw'
+  subscriptionId: '62c1dd5c-d918-4a4d-b0ee-18d5e7d5071b'
+  primaryEndpointTarget: 'audit-shared-prd.westeurope.cloudapp.azure.com'

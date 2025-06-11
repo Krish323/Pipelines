@@ -1,0 +1,41 @@
+parameters:
+  repositoryName: ""
+  projectName: ""
+  databaseProjects: []
+  artifactName: ""
+
+steps:
+  - checkout: ${{ parameters.repositoryName }}
+    clean: true
+    
+  - task: NuGetToolInstaller@1
+    displayName: "Install NuGetToolInstaller for for ${{ parameters.projectName }}"
+
+  - task: NuGetCommand@2
+    displayName: "NuGet restore"
+    inputs:
+      restoreSolution: "${{ parameters.projectName }}"
+      vstsFeed: '$(vstsFeed)'
+
+  - ${{ each dbProject in parameters.databaseProjects }}:
+    - task: VSBuild@1
+      displayName: "Build solution for ${{ dbProject }}"
+      inputs:
+        solution: "${{ dbProject }}/${{ dbProject }}.sqlproj"
+        msbuildArgs: "/t:build /p:CmdLineInMemoryStorage=True"
+        platform: "$(buildPlatform)"
+        configuration: "$(buildConfiguration)"
+
+  - task: CopyFiles@2
+    displayName: "Copy DAPAC file"
+    inputs:
+      SourceFolder: '$(Build.SourcesDirectory)'
+      Contents: '**\*.dacpac'
+      TargetFolder: "$(Build.StagingDirectory)"
+      flattenFolders: true
+
+  - task: PublishPipelineArtifact@1
+    displayName: "Publish Artifact"
+    inputs:
+      artifactName: ${{ parameters.artifactName }}
+      targetPath: $(Build.StagingDirectory)

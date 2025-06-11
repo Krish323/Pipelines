@@ -1,0 +1,25 @@
+parameters:
+  azureSubscription: ""
+  infrastructureRepo: ""
+
+steps:
+  - checkout: ${{ parameters.infrastructureRepo }}
+    clean: true
+    path: Infrastructure
+
+  - task: AzurePowerShell@5
+    displayName: 'Get DB Admin Password - $(geo) $(environment)'
+    inputs:
+      azureSubscription: ${{ parameters.azureSubscription }}
+      ScriptType: FilePath
+      ScriptPath: '$(Pipeline.Workspace)/Infrastructure/PipelineScripts/Set-SecretAsPipelineVariable.ps1'
+      ScriptArguments: '-KeyVaultName ''$(deployKeyVaultName)'' -SecretName ''$(dbAdminPasswordSecretName)'' -VariableName ''dbAdminPassword'''
+      azurePowerShellVersion: LatestVersion
+
+  - task: AzurePowerShell@5
+    displayName: 'Create Migration User - $(geo) $(environment)'
+    inputs:
+      azureSubscription: ${{ parameters.azureSubscription }}
+      ScriptPath: '$(Pipeline.Workspace)/Infrastructure/Scripts/Set-SqlUserInDatabases.ps1'
+      ScriptArguments: '-AppDatabaseNames ''Navigator_Case_Master'' -AppDatabaseNameFormat csv -SqlServerName ''$(sqlServerName)'' -AdminDbUserName ''$(dbAdminLoginName)'' -AdminDbPassword ''$(dbAdminPassword)'' -AppKeyVaultName ''$(applicationKeyVaultName)'' -PasswordSecretName ''MigrationAccountPassword'' -SqlUserName ''migration_account'' -SqlUserPassword ''$(migrationSqlUserPassword)'' -DatabaseRoles ''db_owner'''
+      azurePowerShellVersion: LatestVersion

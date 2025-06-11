@@ -1,0 +1,21 @@
+parameters:
+  pool: ASSURANCE-USE2-NPD-AKS-WIN-RELEASE
+  databaseRepositoryName: ""
+  databaseProjectName: ""
+  databaseProjects: []
+  artifactName: ""
+
+jobs:
+  - template: infrastructure-build-jobs-template.yml
+
+  - job: DatabaseBuild
+    pool: "${{ parameters.pool }}"
+    variables:
+      - template: ../variables-templates/build-variables-template.yml
+    steps:
+      - template: steps-templates/sql-database-build-steps-template.yml
+        parameters:
+          repositoryName: ${{ parameters.databaseRepositoryName }}
+          projectName: "${{ parameters.databaseProjectName }}"
+          databaseProjects: "${{ parameters.databaseProjects }}"
+          artifactName: "${{ parameters.artifactName }}"

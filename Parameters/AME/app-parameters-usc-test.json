@@ -1,0 +1,159 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "appName": {
+            "value": "navigator"
+        },
+        "locationCode": {
+            "value": "usc"
+        },
+        "environment": {
+            "value": "test"
+        },
+        "primaryLocationCode": {
+            "value": "use2"
+        },
+        "primaryEnvironment": {
+            "value": "int"
+        },
+        "applicationLogAnalyticsWorkspace": {
+            "value": "/subscriptions/4bca84d0-9bfe-4519-9e8a-0648cf94d8ee/resourceGroups/AZRG-USC-AUD-ASSURANCE-BCP-SHARED/providers/Microsoft.OperationalInsights/workspaces/bassurancelausc"
+        },
+        "appGatewaySubnets": {
+            "value": [
+                {
+                    "resourceGroupName": "AUDIT_PROD_RG_Network",
+                    "vnetName": "azucusprdvnt01",
+                    "subnetName": "auditbcpuscag1_subnet"
+                },
+                {
+                    "resourceGroupName": "AUDIT_PROD_RG_Network",
+                    "vnetName": "azucusprdvnt01",
+                    "subnetName": "auditbcpuscag2_subnet"
+                }
+            ]
+        },
+        "keyManagementSubnets": {
+            "value": [
+                {
+                    "resourceGroupName": "AUDIT_PROD_RG_Network",
+                    "vnetName": "azucusprdvnt01",
+                    "subnetName": "AUDIT_PRODBCP_OMNIA_General_Subnet"
+                },
+                {
+                    "resourceGroupName": "AZRG_OMNIABUILD_BCP_AME_CUS_AKS",
+                    "vnetName": "bcpomniaaksvnetcus",
+                    "subnetName": "nodes-subnet"
+                }
+            ]
+        },
+        "aspSku": {
+            "value": {
+                "name": "S1",
+                "tier": "Standard",
+                "size": "S1",
+                "family": "S1",
+                "capacity": 1
+            }
+        },
+        "signalRAllowedOrigins": {
+            "value": [
+                "https://tnavigator.aaps.deloitte.com",
+                "https://tnavigatorappsvcuiusc.azurewebsites.net"
+            ]
+        },
+        "availabilityTestArray": {
+            "value": [
+                {
+                    "name": "__appServiceNameWeb__",
+                    "url": "https://__uiHostName__",
+                    "description": "__appServiceNameWeb__ - https://__uiHostName__ is not responding",
+                    "actionGroupName": "critical",
+                    "severity": 0,
+                    "enabled": false,
+                    "expected": 200,
+                    "frequencySeconds": 300,
+                    "timeoutSeconds": 30,
+                    "failedLocationCount": 2,
+                    "pingText": "",
+                    "locations": [
+                        {
+                            "Id": "us-fl-mia-edge"
+                        },
+                        {
+                            "Id": "us-il-ch1-azr"
+                        },
+                        {
+                            "Id": "us-tx-sn1-azr"
+                        },
+                        {
+                            "Id": "us-ca-sjc-azr"
+                        }
+                    ]
+                },
+                {
+                    "name": "__appServiceNameApi__",
+                    "url": "https://__apiHostNameAme__/api/case/data",
+                    "description": "__appServiceNameApi__ - https://__apiHostNameAme__ is not responding",
+                    "actionGroupName": "critical",
+                    "severity": 0,
+                    "enabled": false,
+                    "expected": 401,
+                    "frequencySeconds": 300,
+                    "timeoutSeconds": 30,
+                    "failedLocationCount": 2,
+                    "pingText": "",
+                    "locations": [
+                        {
+                            "Id": "us-fl-mia-edge"
+                        },
+                        {
+                            "Id": "us-il-ch1-azr"
+                        },
+                        {
+                            "Id": "us-tx-sn1-azr"
+                        },
+                        {
+                            "Id": "us-ca-sjc-azr"
+                        }
+                    ]
+                }
+            ]
+        },
+        "actionGroupsArray": {
+            "value": [
+                {
+                    "name": "critical",
+                    "emailReceivers": [
+                        {
+                            "name": "Email usassurancedevopsame@deloitte.com",
+                            "emailAddress": "usassurancedevopsame@deloitte.com",
+                            "useCommonAlertSchema": true
+                        },
+                        {
+                            "name": "Email mstrolle@deloitte.com",
+                            "emailAddress": "mstrolle@deloitte.com",
+                            "useCommonAlertSchema": true
+                        }
+                    ],
+                    "smsReceivers": [
+                        {
+                            "name": "Text Bryan Hodge",
+                            "countryCode": "1",
+                            "phoneNumber": "6155424466"
+                        }
+                    ],
+                    "voiceReceivers": [],
+                    "webhookReceivers": [
+                        {
+                            "name": "Xmatters",
+                            "serviceUri": "https://deloitte-itm.na2.xmatters.com/api/integration/1/functions/edb106d8-e29c-4631-a777-8af277d81624/triggers?apiKey=bb802e19-ffa8-4f2a-a9c6-92c3cf945012&recipients=Assurance%20DevOps%20AME",
+                            "useCommonAlertSchema": true
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}

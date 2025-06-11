@@ -1,0 +1,94 @@
+trigger: none
+
+name: $(Date:yyyyMMdd)$(Rev:.r)
+
+stages:
+- stage: BUILD
+  jobs:
+    - template: build-templates/infrastructure-build-jobs-template.yml
+
+- stage: EMA_INT_FAILOVER
+  dependsOn: BUILD
+  jobs:
+    - deployment: EMA_INT_FAILOVER
+      environment: INFRASTRUCTURE_PROD_TEST
+      pool: ASSURANCE-EUN-BCP-AKS-WIN-RELEASE
+    - template: deployment-templates/bcp-failover-deployment-jobs-template.yml
+      parameters:
+        pool: ASSURANCE-EUN-BCP-AKS-WIN-RELEASE
+        azureSubscription: AzureRM_EMA_AUDIT_PROD
+        geo: ema
+        lifecycle: bcp
+        environment: test
+        isPrimaryGeo: true
+
+- stage: EMA_INT_FAILBACK
+  dependsOn: EMA_INT_FAILOVER
+  jobs:
+    - deployment: EMA_INT_FAILBACK
+      environment: INFRASTRUCTURE_PROD_TEST
+      pool: ASSURANCE-EUW-PROD-AKS-WIN-RELEASE
+    - template: deployment-templates/bcp-failback-deployment-jobs-template.yml
+      parameters:
+        pool: ASSURANCE-EUW-PROD-AKS-WIN-RELEASE
+        azureSubscription: AzureRM_EMA_AUDIT_PROD
+        geo: ema
+        lifecycle: prod
+        environment: int
+        isPrimaryGeo: true
+
+- stage: AME_INT_FAILOVER
+  dependsOn: BUILD
+  jobs:
+    - deployment: AME_INT_FAILOVER
+      environment: INFRASTRUCTURE_PROD_TEST
+      pool: ASSURANCE-USC-BCP-AKS-WIN-RELEASE
+    - template: deployment-templates/bcp-failover-deployment-jobs-template.yml
+      parameters:
+        pool: ASSURANCE-USC-BCP-AKS-WIN-RELEASE
+        azureSubscription: AzureRM_US_AUDIT_PROD
+        geo: ame
+        lifecycle: bcp
+        environment: test
+
+- stage: AME_INT_FAILBACK
+  dependsOn: AME_INT_FAILOVER
+  jobs:
+    - deployment: AME_INT_FAILBACK
+      environment: INFRASTRUCTURE_PROD_TEST
+      pool: ASSURANCE-USE2-PROD-AKS-WIN-RELEASE
+    - template: deployment-templates/bcp-failback-deployment-jobs-template.yml
+      parameters:
+        pool: ASSURANCE-USE2-PROD-AKS-WIN-RELEASE
+        azureSubscription: AzureRM_US_AUDIT_PROD
+        geo: ame
+        lifecycle: prod
+        environment: int
+
+- stage: APA_INT_FAILOVER
+  dependsOn: BUILD
+  jobs:
+    - deployment: APA_INT_FAILOVER
+      environment: INFRASTRUCTURE_PROD_TEST
+      pool: ASSURANCE-JPW-BCP-AKS-WIN-RELEASE
+    - template: deployment-templates/bcp-failover-deployment-jobs-template.yml
+      parameters:
+        pool: ASSURANCE-JPW-BCP-AKS-WIN-RELEASE
+        azureSubscription: AzureRM_APA_AUDIT_PROD
+        geo: apa
+        lifecycle: bcp
+        environment: test
+
+- stage: APA_INT_FAILBACK
+  dependsOn: APA_INT_FAILOVER
+  jobs:
+    - deployment: APA_INT_FAILBACK
+      environment: INFRASTRUCTURE_PROD_TEST
+      pool: ASSURANCE-JPE-PROD-AKS-WIN-RELEASE
+    - template: deployment-templates/bcp-failback-deployment-jobs-template.yml
+      parameters:
+        pool: ASSURANCE-JPE-PROD-AKS-WIN-RELEASE
+        azureSubscription: AzureRM_APA_AUDIT_PROD
+        geo: apa
+        lifecycle: prod
+        environment: int

@@ -1,0 +1,150 @@
+parameters:
+  azureSubscription: ""
+  deploySecondaryGeos: false
+  azureSubscriptionSqlReplica: ""
+  sqlReplicas: []
+  permissionMsiInDb: false
+  isPrimaryGeo: false
+  isPrimaryLocation: true
+
+steps:
+  - task: replacetokens@6
+    displayName: 'Replace Tokens - $(geo) - $(environmentFullName)'
+    inputs:
+      sources: '$(Pipeline.Workspace)/Infrastructure/Parameters/$(geo)/*-$(environment).json'
+      includeDotPaths: false
+      ifNoFilesFound: 'error'
+      missingVarLog: 'error'
+      missingVarAction : 'keep'
+      tokenPattern: 'doubleunderscores'
+      logLevel: 'warn'
+
+  - task: AzureResourceManagerTemplateDeployment@3
+    displayName: 'Network Resources Template - $(geo) - $(environmentFullName)'
+    inputs:
+      azureResourceManagerConnection: '${{ parameters.azureSubscription }}'
+      subscriptionId: '$(subscriptionId)'
+      resourceGroupName: '$(resourceGroupName)'
+      location: '$(location)'
+      csmFile: '$(Pipeline.Workspace)/Infrastructure/Templates/network-template.json'
+      csmParametersFile: '$(Pipeline.Workspace)/Infrastructure/Parameters/$(geo)/network-parameters-$(locationCode)-$(environment).json'
+      overrideParameters: -environmentIndex $(environmentIndex)
+
+  - task: AzureResourceManagerTemplateDeployment@3
+    displayName: "Shared Resoures Template - $(geo) - $(environmentFullName)"
+    inputs:
+      azureResourceManagerConnection: '${{ parameters.azureSubscription }}'
+      subscriptionId: '$(subscriptionId)'
+      resourceGroupName: '$(resourceGroupName)'
+      location: '$(location)'
+      csmFile: '$(Pipeline.Workspace)/Infrastructure/Templates/shared-template.json'
+      csmParametersFile: '$(Pipeline.Workspace)/Infrastructure/Parameters/$(geo)/shared-parameters-$(locationCode)-$(environment).json'
+      overrideParameters: -containerBlobNames "$(completeBlobNamesJson)" -nonProdIpFirewallRules $(nonProdIpFirewallRules) -environmentIndex $(environmentIndex)
+
+  - task: AzurePowerShell@5
+    displayName: 'Add DB Admin Password to Key Vault - $(geo) - $(environmentFullName)'
+    inputs:
+      azureSubscription: '${{ parameters.azureSubscription }}'
+      ScriptType: FilePath
+      ScriptPath: '$(Pipeline.Workspace)/Infrastructure/Scripts/Set-PasswordInKeyVault.ps1'
+      ScriptArguments: '-KeyVaultName $(deployKeyVaultName) -SecretName $(dbAdminPasswordSecretName) -Randomize'
+      azurePowerShellVersion: LatestVersion
+
+  - task: AzurePowerShell@5
+    displayName: 'Get DB Admin Password'
+    inputs:
+      azureSubscription: '${{ parameters.azureSubscription }}'
+      ScriptType: FilePath
+      ScriptPath: '$(Pipeline.Workspace)/Infrastructure/PipelineScripts/Set-SecretAsPipelineVariable.ps1'
+      ScriptArguments: '-KeyVaultName ''$(deployKeyVaultName)'' -SecretName ''$(dbAdminPasswordSecretName)'' -VariableName ''dbAdminPassword'''
+      azurePowerShellVersion: LatestVersion
+
+  - task: AzurePowerShell@5
+    displayName: 'Clear Sql Server Firewall Rules - $(geo) - $(environmentFullName)'
+    inputs:
+      azureSubscription: '${{ parameters.azureSubscription }}'
+      ScriptType: FilePath
+      ScriptPath: '$(Pipeline.Workspace)/Infrastructure/Scripts/Clear-SqlServerFirewallRules.ps1'
+      ScriptArguments: '-ResourceGroupName "$(resourceGroupName)" -SqlServerName ''$(sqlServerName)'''
+      azurePowerShellVersion: LatestVersion
+      
+  - task: AzureResourceManagerTemplateDeployment@3
+    displayName: 'DB Template - $(geo) - $(environmentFullName)'
+    inputs:
+      azureResourceManagerConnection: '${{ parameters.azureSubscription }}'
+      subscriptionId: '$(subscriptionId)'
+      resourceGroupName: '$(resourceGroupName)'
+      location: '$(location)'
+      csmFile: '$(Pipeline.Workspace)/Infrastructure/Templates/db-template.json'
+      csmParametersFile: '$(Pipeline.Workspace)/Infrastructure/Parameters/$(geo)/db-parameters-$(locationCode)-$(environment).json'
+      overrideParameters: -dbAdminLoginName "$(dbAdminLoginName)" -dbAdminLoginPwd "$(dbAdminPassword)" -dbContainerNames "$(completeDbNamesListJson)" -nonProdIpFirewallRules $(nonProdIpFirewallRules) -environmentIndex $(environmentIndex)
+      
+  - task: AzurePowerShell@5
+    displayName: "Add MSI to Primary DB's - $(geo) $(environmentFullName)"
+    condition: and(succeeded(), eq(${{ parameters.permissionMsiInDb }}, true), ${{ parameters.isPrimaryLocation }})
+    inputs:
+      azureSubscription: ${{ parameters.azureSubscription }}
+      ScriptPath: "$(Pipeline.Workspace)/Infrastructure/Scripts/Add-AdUserInDatabasesBySqlUser.ps1"
+      ScriptArguments: -SqlServerName '$(SqlServerName)' -AdminDbUserName '$(dbAdminLoginName)' -AdminDbPassword '$(dbAdminPassword)' -ActiveDirectoryUsersArray '$(applicationMsiName)' -DatabaseRolesArray '$(applicationDatabaseRoles)'.Split(',') -GrantExecute
+      azurePowerShellVersion: LatestVersion
+  
+  - task: AzurePowerShell@5
+    displayName: "Add Application SG to Primary DB's - $(geo) $(environmentFullName)"
+    condition: and(succeeded(), not(in(variables['Environment'], 'bcp', 'prod', 'stage', 'val', 'int', 'test')), eq(${{ parameters.permissionMsiInDb }}, true))
+    inputs:
+      azureSubscription: ${{ parameters.azureSubscription }}
+      ScriptPath: "$(Pipeline.Workspace)/Infrastructure/Scripts/Add-SGUserInDatabasesBySqlUser.ps1"
+      ScriptArguments: -SqlServerName '$(SqlServerName)' -AdminDbUserName '$(dbAdminLoginName)' -AdminDbPassword '$(dbAdminPassword)' -ActiveDirectoryUsersArray $(applicationNonProdGroupNames) -DatabaseRolesArray '$(developerDatabaseRoles)'.Split(',') -GrantExecute
+      azurePowerShellVersion: LatestVersion
+
+  - ${{ each replica in parameters.sqlReplicas }}:
+      - task: AzureResourceManagerTemplateDeployment@3
+        displayName: 'DB Template - ${{ replica }} replica - $(geo) - $(environmentFullName)'
+        condition: and(succeeded(), ${{ parameters.deploySecondaryGeos }} )
+        inputs:
+          azureResourceManagerConnection: '${{ parameters.azureSubscriptionSqlReplica }}'
+          subscriptionId: '$(subscriptionId)'
+          resourceGroupName: '$(resourceGroupName)'
+          location: '$(location)'
+          csmFile: '$(Pipeline.Workspace)/Infrastructure/Templates/db-replica-template.json'
+          csmParametersFile: '$(Pipeline.Workspace)/Infrastructure/Parameters/$(geo)/db-parameters-replica-${{ replica }}-$(environment).json'
+          overrideParameters: -dbAdminLoginName "$(dbAdminLoginName)" -dbAdminLoginPwd "$(dbAdminPassword)" -nonProdIpFirewallRules $(nonProdIpFirewallRules) -environmentIndex $(environmentIndex)
+
+  - task: AzurePowerShell@5
+    displayName: "Add MSI to Replica DB's - $(geo) $(environmentFullName)"
+    condition: and(succeeded(), eq(${{ parameters.permissionMsiInDb }}, true), eq(${{ parameters.isPrimaryGeo }}, true), ${{ parameters.isPrimaryLocation }}, ${{ parameters.deploySecondaryGeos }})
+    inputs:
+      azureSubscription: ${{ parameters.azureSubscription }}
+      ScriptPath: "$(Pipeline.Workspace)/Infrastructure/Scripts/Add-AdUserInDatabasesBySqlUser.ps1"
+      ScriptArguments: -SqlServerName '$(SqlServerName)' -AdminDbUserName '$(dbAdminLoginName)' -AdminDbPassword '$(dbAdminPassword)' -ActiveDirectoryUsersArray '$(replicaMsiNames)'.Split(',') -DatabaseRolesArray '$(replicaDatabaseRoles)'.Split(',') -DatabaseNamesArray '$(replicaDatabaseNames)'.Split(',') -GrantExecute
+      azurePowerShellVersion: LatestVersion
+
+  - task: AzureResourceManagerTemplateDeployment@3
+    displayName: 'App Resources Template - $(geo) - $(environmentFullName)'
+    inputs:
+      azureResourceManagerConnection: '${{ parameters.azureSubscription }}'
+      subscriptionId: '$(subscriptionId)'
+      resourceGroupName: '$(resourceGroupName)'
+      location: '$(location)'
+      csmFile: '$(Pipeline.Workspace)/Infrastructure/Templates/app-template.json'
+      csmParametersFile: '$(Pipeline.Workspace)/Infrastructure/Parameters/$(geo)/app-parameters-$(locationCode)-$(environment).json'
+      overrideParameters: -functionAppNames "$(functionAppNamesListJson)" -environmentIndex $(environmentIndex) -cekKeyVaultIdentity $(cekKeyVaultIdentity) -cekKeyVaultResourceGroup $(cekKeyVaultResourceGroup) -deloitteInternalPrivateEndpointSubnetId $(deloitteInternalSubnetId)
+
+  - task: AzurePowerShell@5
+    displayName: "Attach Internal SignalR Private Endpoint to Deloitte Private DNS Zone - $(geo) - $(environmentFullName)"
+    retryCountOnTaskFailure: 3
+    condition: and(succeeded(), not(in(variables['environment'], 'int', 'test')), not(eq(variables['environmentIndex'], 4)))
+    inputs:
+      azureSubscription: "${{ parameters.azureSubscription }}"
+      ScriptType: FilePath
+      ScriptPath: "$(Pipeline.Workspace)/Infrastructure/Scripts/Add-PrivateEndpointPrivateDNSZone.ps1"
+      ScriptArguments: '-PrivateEndpointName "$(signalrInternalPrivateEndpointName)" -ResourceGroupName "$(resourceGroupName)" -SubnetId $(deloitteInternalSubnetId) -PrivateDnsZoneId $(signalrInternalPrivateDnsZoneId)'
+      azurePowerShellVersion: LatestVersion
+
+  - task: AzurePowerShell@5
+    displayName: "Set Network Access Controls on SignalR Service - $(geo) $(environmentFullName)"
+    inputs:
+      azureSubscription: ${{ parameters.azureSubscription }}
+      ScriptPath: "$(Pipeline.Workspace)/Infrastructure/Scripts/Set-SignalRPrivateEndpointACLs.ps1"
+      ScriptArguments: -ResourceGroupName '$(resourceGroupName)' -SignalRServiceName '$(signalRServiceName)'
+      azurePowerShellVersion: LatestVersion
